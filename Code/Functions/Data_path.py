@@ -1,59 +1,48 @@
-import os
+import os  # Import the os module for interacting with the operating system (e.g., file system traversal)
+from itertools import chain  # Import chain for flattening nested lists
 
-# ============================================== Data path ===================================================
-# Function to construct the path to a data folder and list files within it
-def data_path(folder_path, data_format, depth=0):
-    """
-    =============================== Presented by: Reza Saadatyar (2023-2024) =================================
-    ================================ E-mail: Reza.Saadatyar@outlook.com ======================================
-    Parameters:
-    - folder_path: Path to the folder to search.
-    - data_format: Desired format of the data files.
-    - depth (optional): Current depth in the directory structure (default: 0).
-    ================================= Flowchart for the data path function ===================================
-    Start
-    1. Get the contents of the folder and sort them.
-    2. Initialize lists to store files, folders, and files' paths.
-    3. Iterate over each item in the folder:
-    a. Create the full path of the item.
-    b. If the item is a file:
-        i. Append it to the files list along with its depth and full path.
-    c. If the item is a directory:
-        i. Append it to the folders list along with its depth and full path.
-        ii. Recursively list files and folders in subfolders.
-        iii. Extend the files and folders lists with the subfiles and subfolders.
-    4. Iterate over the files:
-    a. Check if the file ends with the specified data format.
-    b. If it matches the data format, append its full path to the files_path list.
-    5. Return the list of files with the specified data format, all files, and all folders.
-    End
-    ==========================================================================================================
-    """
-    contents = sorted(os.listdir(folder_path)) # Get the contents of the folder and sort them
-    files = []             # Initialize lists to store files
-    folders = []           # Initialize lists to store folders
-    files_path = []        # Initialize lists to store files path
-    
-    for item in contents:  # Iterate over each item in the folder
-        
-        item_path = os.path.join(folder_path, item) # Create the full path of the item
+class DirectoryReader:
+    def __init__(self, directory_path: str, format_type: str) -> None:
+        # Initialize the class attributes
+        self.files: list[str] = []  # List to store filenames
+        self.full_path: list[str] = []  # List to store full file paths
+        self.folder_path: list[str] = []  # List to store folder paths where the files are located
+        self.subfolders: list[list[str]] = []  # List to store subfolders in each directory
+        self.format_type: str = format_type  # The file format type (e.g., ".tif")
+        self.directory_path: str = directory_path  # The directory path to scan for files
 
-        if os.path.isfile(item_path):               # Check if the item is a file
-            # If it's a file, append it to the files list along with its depth and full path
-            files.append((item, depth, item_path))  
-        
-        elif os.path.isdir(item_path):              # Check if the item is a directory
-            # If it's a directory, append it to the folders list along with its depth and full path
-            folders.append((item, depth, item_path))
-            # Recursively list files and folders in subfolders
-            _, sub_files, sub_folders= data_path(item_path, data_format, depth + 1)
-            files.extend(sub_files)
-            folders.extend(sub_folders)
-    # Iterate over the files and check if they end with the specified data format
-    for _, (_, _, val) in enumerate(files):
-        if val.endswith(data_format):
-            # If the file matches the data format, append its full path to the path_files list
-            files_path.append(val)
+    @property
+    def all_file_paths(self) -> list[str]:
+        """Property that retrieves all file paths with the specified format."""
+        for root, subfolder_name, files_name in os.walk(self.directory_path):  # Traverse the directory tree
+            root = root.replace("\\", "/")  # Replace backslashes with forward slashes for cross-platform compatibility
 
-    # Return the list of files with specified data format, all files, and all folders
-    return files_path, files, folders
+            for file in files_name:
+                if file.endswith(self.format_type):  # Check if the file ends with the specified format
+                    self.files.append(file)  # Append the file name to the files list
+
+                    if root not in self.folder_path:  # Check if the root folder is not already in the folder_paths list
+                        self.folder_path.append(root)  # If not, append the root folder to the folder_paths list
+
+                    self.full_path.append(os.path.join(root, file).replace("\\", "/"))  # Append the full file path
+
+                    # Ensure subfolder names are unique and non-empty
+                    if subfolder_name not in self.subfolders and subfolder_name != []:
+                        self.subfolders.append(subfolder_name)  # Append subfolder names to subfolders list
+
+        return self.full_path  # Return the list of full file paths
+
+    @property
+    def filenames(self) -> list[str]:
+        """Property that returns the list of filenames."""
+        return self.files  # Return the list of filenames
+
+    @property
+    def folder_paths(self) -> list[str]:
+        """Property that returns the list of directories containing the files."""
+        return self.folder_path  # Return the list of folder paths
+
+    @property
+    def subfoldernames(self) -> list[str]:
+        """Property that returns a flattened list of subfolder names."""
+        return list(chain.from_iterable(self.subfolders))  # Flatten the list of subfolders using chain and return it
