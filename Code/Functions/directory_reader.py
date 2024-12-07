@@ -2,18 +2,26 @@ import os  # Import the os module for interacting with the operating system (e.g
 from itertools import chain  # Import chain for flattening nested lists
 
 class DirectoryReader:
+    """
+    A class for reading and processing files in a directory with a specific format.
+    """
     def __init__(self, directory_path: str, format_type: str) -> None:
-        # Initialize the class attributes
-        self.files: list[str] = []  # List to store filenames
-        self.full_path: list[str] = []  # List to store full file paths
-        self.folder_path: list[str] = []  # List to store folder paths where the files are located
-        self.subfolders: list[list[str]] = []  # List to store subfolders in each directory
-        self.format_type: str = format_type  # The file format type (e.g., ".tif")
-        self.directory_path: str = directory_path  # The directory path to scan for files
+        """
+        Initialize the DirectoryReader with a directory path and file format.
 
-    @property
-    def all_file_paths(self) -> list[str]:
-        """Property that retrieves all file paths with the specified format."""
+        :param directory_path: Path to the directory to scan for files.
+        :param format_type: File format (extension) to filter files, e.g., ".tif".
+        """        
+        self.files: list[str] = []
+        self.full_path: list[str] = []
+        self.folder_path: list[str] = []
+        self.subfolder: list[list[str]] = []
+        self.format_type: str = format_type
+        self.directory_path: str = directory_path
+
+        self._scan_directory()
+
+    def _scan_directory(self) -> None:
         for root, subfolder_name, files_name in os.walk(self.directory_path):  # Traverse the directory tree
             root = root.replace("\\", "/")  # Replace backslashes with forward slashes for cross-platform compatibility
 
@@ -27,22 +35,41 @@ class DirectoryReader:
                     self.full_path.append(os.path.join(root, file).replace("\\", "/"))  # Append the full file path
 
                     # Ensure subfolder names are unique and non-empty
-                    if subfolder_name not in self.subfolders and subfolder_name != []:
-                        self.subfolders.append(subfolder_name)  # Append subfolder names to subfolders list
+                    if subfolder_name not in self.subfolder and subfolder_name != []:
+                        self.subfolder.append(subfolder_name)  # Append subfolder names to subfolders list
 
-        return self.full_path  # Return the list of full file paths
+    @property
+    def all_file_paths(self) -> list[str]:
+        """
+        Retrieve all full file paths for files with the specified format.
+
+        :return: List of full file paths.
+        """
+        return self.full_path
 
     @property
     def filenames(self) -> list[str]:
-        """Property that returns the list of filenames."""
-        return self.files  # Return the list of filenames
+        """
+        Retrieve the list of filenames.
+
+        :return: List of filenames.
+        """
+        return self.files
 
     @property
     def folder_paths(self) -> list[str]:
-        """Property that returns the list of directories containing the files."""
-        return self.folder_path  # Return the list of folder paths
+        """
+        Retrieve the list of folder paths containing the files.
+
+        :return: List of folder paths.
+        """
+        return self.folder_path
 
     @property
     def subfoldernames(self) -> list[str]:
-        """Property that returns a flattened list of subfolder names."""
-        return list(chain.from_iterable(self.subfolders))  # Flatten the list of subfolders using chain and return it
+        """
+        Retrieve a flattened list of subfolder names.
+
+        :return: Flattened list of subfolder names.
+        """
+        return list(chain.from_iterable(self.subfolder))
