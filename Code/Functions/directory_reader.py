@@ -12,14 +12,13 @@ class DirectoryReader:
         :param directory_path: Path to the directory to scan for files.
         :param format_type: File format (extension) to filter files, e.g., ".tif".
         """        
-        self.files: list[str] = []
-        self.full_path: list[str] = []
-        self.folder_path: list[str] = []
-        self.subfolder: list[list[str]] = []
-        self.format_type: str = format_type
-        self.directory_path: str = directory_path
-
-        self._scan_directory()
+        self.files: list[str] = [] # Stores the names of all files matching the specified format.
+        self.full_path: list[str] = [] # Stores the full paths of all matching files.
+        self.folder_path: list[str] = [] # Stores the unique folder paths containing the files.
+        self.subfolder: list[list[str]] = [] # Stores the names of subfolders for each directory.
+        self.format_type: str = format_type # Stores the file format to filter (e.g., ".tif").
+        self.directory_path: str = directory_path # Stores the root directory path to scan.
+        self._scan_directory()  # Perform the directory scanning process.
 
     def _scan_directory(self) -> None:
         for root, subfolder_name, files_name in os.walk(self.directory_path):  # Traverse the directory tree
