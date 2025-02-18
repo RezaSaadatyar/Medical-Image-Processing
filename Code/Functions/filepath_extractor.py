@@ -16,22 +16,22 @@ class FilePathExtractor:
         Parameters:
         - directory_path: Path to the directory to scan for files.
         - format_type: File format (extension) to filter files, e.g., ".tif".
-        
+
         Import module:
         - from Functions.filepath_extractor import FilePathExtractor
-        
+
         Example:
         - obj = FilePathExtractor(file_path, "csv")
-          1. file_names = obj.filenames          # List of filenames in the directory with the specified extension
-          2. folder = obj.folder_paths           # List of folder paths where the files are located
-          3. file_paths = obj.all_file_paths     # List of full file paths for the files
-          4. subfoldernames = obj.subfoldernames # List of subfolder names within the directory
+          1. files_name = obj.filesname           # List of filename in the directory with the specified extension
+          2. folders = obj.folders_path           # List of folders path where the files are located
+          3. files_path = obj.all_files_path      # List of full files path for the files
+          4. subfoldersname = obj.subfoldersname  # List of subfolders name within the directory
         """
-        
-        # Initialize class attributes      
+
+        # Initialize class attributes
         self.files: list[str] = [] # Stores the names of all files matching the specified format.
         self.full_path: list[str] = [] # Stores the full paths of all matching files.
-        self.folder_path: list[str] = [] # Stores the unique folder paths containing the files.
+        self.folder_path: list[str] = [] # Stores the unique folders path containing the files.
         self.subfolder: list[list[str]] = [] # Stores the names of subfolders for each directory.
         self.format_type: str = format_type # Stores the file format to filter (e.g., ".tif").
         self.directory_path: str = directory_path # Stores the root directory path to scan.
@@ -55,37 +55,37 @@ class FilePathExtractor:
                         self.subfolder.append(subfolder_name)  # Append subfolder names to subfolders list
 
     @property
-    def all_file_paths(self) -> list[str]:
+    def all_files_path(self) -> list[str]:
         """
-        Retrieve all full file paths for files with the specified format.
+        Retrieve all full files path for files with the specified format.
 
-        :return: List of full file paths.
+        :return: List of full files path.
         """
         return self.full_path
 
     @property
-    def filenames(self) -> list[str]:
+    def filesname(self) -> list[str]:
         """
-        Retrieve the list of filenames.
+        Retrieve the list of filesname.
 
-        :return: List of filenames.
+        :return: List of filesname.
         """
         return self.files
 
     @property
-    def folder_paths(self) -> list[str]:
+    def folders_path(self) -> list[str]:
         """
-        Retrieve the list of folder paths containing the files.
+        Retrieve the list of folders path containing the files.
 
-        :return: List of folder paths.
+        :return: List of folders path.
         """
         return self.folder_path
 
     @property
-    def subfoldernames(self) -> list[str]:
+    def subfoldersname(self) -> list[str]:
         """
-        Retrieve a flattened list of subfolder names.
+        Retrieve a flattened list of subfolders name.
 
-        :return: Flattened list of subfolder names.
+        :return: Flattened list of subfolders name.
         """
         return list(chain.from_iterable(self.subfolder))
