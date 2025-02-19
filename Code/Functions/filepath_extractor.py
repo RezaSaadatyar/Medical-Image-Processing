@@ -13,14 +13,14 @@ class FilePathExtractor:
         """
         Initialize the FilePathExtractor with a directory path and file format.
         
-        Parameters:
+        **Parameters:**
         - directory_path: Path to the directory to scan for files.
         - format_type: File format (extension) to filter files, e.g., ".tif".
 
-        Import module:
+        **Import module:**
         - from Functions.filepath_extractor import FilePathExtractor
 
-        Example:
+        **Example:**
         - obj = FilePathExtractor(file_path, "csv")
           1. files_name = obj.filesname           # List of filename in the directory with the specified extension
           2. folders = obj.folders_path           # List of folders path where the files are located
@@ -59,7 +59,7 @@ class FilePathExtractor:
         """
         Retrieve all full files path for files with the specified format.
 
-        :return: List of full files path.
+        **return:** List of full files path.
         """
         return self.full_path
 
@@ -68,7 +68,7 @@ class FilePathExtractor:
         """
         Retrieve the list of filesname.
 
-        :return: List of filesname.
+        **return:** List of filesname.
         """
         return self.files
 
@@ -77,7 +77,7 @@ class FilePathExtractor:
         """
         Retrieve the list of folders path containing the files.
 
-        :return: List of folders path.
+        **return:** List of folders path.
         """
         return self.folder_path
 
@@ -86,6 +86,6 @@ class FilePathExtractor:
         """
         Retrieve a flattened list of subfolders name.
 
-        :return: Flattened list of subfolders name.
+        **return:** Flattened list of subfolders name.
         """
         return list(chain.from_iterable(self.subfolder))
