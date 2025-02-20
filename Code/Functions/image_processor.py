@@ -15,10 +15,25 @@ class ImageProcessor:
         """
         Initialize the ImageProcessor class.
 
-        :param img_data: A numpy array of shape [num_images, height, width, channels].
-        
         **Import module:**
         - from Functions.image_processor import ImageProcessor
+        
+        **Example:**
+        
+        obj = ImageProcessor()
+        1. Images into ndarray
+           - data = obj.imgs_to_ndarray(directory_path, format_type="tif")
+           - print(Fore.GREEN + f"{data.shape = }")
+        2. Masks into boolean
+           - masks = obj.masks_to_boolean(directory_path, format_type="TIF")
+           - print(Fore.GREEN + f"{masks.shape = }"
+        3. Rgb into gray
+           - img_gray = obj.rgb_to_gray(directory_path, save_path, format_type="tif", save_img_gray="off")
+        4. Resize images
+           - resized_images = obj.resize_images(data, img_height_resized=255, img_width_resized=255)  # Resize all images to 255x255
+           - print(Fore.GREEN + f"Resizing images from {data.shape} to {resized_images.shape}")
+        5. Augmentation
+           - img.augmentation(file_path, augmente_path, num_augmented_imag, rotation_range, format_type="tif")
         """
     # ============================================ Images convert to ndarray ===================================
     def imgs_to_ndarray(self, directory_path:str, format_type:str) -> np.ndarray:
@@ -77,7 +92,7 @@ class ImageProcessor:
         # Return the NumPy array containing all images
         return imgs
     
-    # ============================================ Images convert to ndarray ===================================
+    # ============================================ Maskss convert to boolean ===================================
     def masks_to_boolean(self, directory_path:str, format_type:str="TIF") -> bool:
         """
         Convert mask images from a specified directory into a boolean NumPy array.
@@ -125,6 +140,70 @@ class ImageProcessor:
 
         # Return the boolean NumPy array containing all masks
         return masks
+    
+    # ============================================== RGB_to_Gray ===============================================   
+    def rgb_to_gray(self, directory_path: str, save_path: str, format_type: str, save_img_gray: str = "off") -> np.ndarray:
+        """
+        Convert RGB images in the specified directory to grayscale.
+
+        **Args:**
+        - directory_path (str): Path to the directory containing image files.
+        - format_type (str): File format (e.g., ".jpg", ".png") to filter images.
+        - save_img_gray (str, optional): Whether to save the grayscale images. Defaults to "off".
+            If set to "on", grayscale images are saved to a subfolder named 'Gray image/'.
+
+        **Returns:**
+        - np.ndarray: A NumPy array containing grayscale images with shape [num_images, height, width].
+
+        **Raises:**
+        - ValueError: If no files are found in the specified directory.
+
+        Notes:
+        - The grayscale images are saved in a subfolder named 'Gray image/' within the specified directory.
+        - The function uses `skimage.color.rgb2gray` for RGB-to-grayscale conversion.
+        
+        **Example:**
+        - obj = ImageProcessor()
+        - img_gray = obj.RGB2Gray(directory_path, save_path, format_type, save_img_gray="off")
+        """
+        # Create an instance of FilePathExtractor to retrieve file paths
+        obj_path = FilePathExtractor(directory_path, format_type=format_type)
+
+        # Get a list of all file paths in the specified directory
+        files_path = obj_path.all_files_path
+
+        # Get corresponding filenames
+        files_name = obj_path.filesname
+
+        # Check if the list of file paths is empty
+        if not files_path: raise ValueError("No files found in the specified directory.")
+
+        # Retrieve the dimensions of the first image to initialize the grayscale array
+        img_height, img_width, _ = io.imread(files_path[0]).shape
+
+        # Initialize a NumPy array to store grayscale images
+        img_gray = np.zeros((len(files_path), img_height, img_width), dtype=np.uint8)
+
+        # Convert each image to grayscale
+        for ind, val in enumerate(files_path):
+            # Read the image, convert it to grayscale, scale back to [0, 255], and store it in the array
+            img_gray[ind] = (color.rgb2gray(io.imread(val)) * 255).astype(np.uint8)
+
+        # Save grayscale images if requested
+        if save_img_gray.lower() == "on":
+            # Create a folder named 'Gray image/' inside the specified save path, if it doesn't already exist
+            os.makedirs(os.path.join(save_path, 'Gray image/'), exist_ok=True)
+
+            # Loop through each image and its corresponding filename
+            for ind, filename in enumerate(files_name):
+                # Save each grayscale image to the 'Gray image/' folder using its original filename
+                io.imsave(fname=os.path.join(save_path, 'Gray image/', filename), arr=img_gray[ind])
+
+            # Print a success message to the console
+            print(Fore.GREEN + "The images have been saved successfully.")
+
+        # Return the grayscale images as a NumPy array
+        return img_gray
     
     # ================================================ Resizes =================================================
     def resize_images(self, data: np.ndarray, img_height_resized: int, img_width_resized: int) -> np.ndarray:
@@ -264,68 +343,5 @@ class ImageProcessor:
         # Delete the temporary folder and its contents after processing
         shutil.rmtree(TEMP_DIR)
     
-    # ============================================== RGB_to_Gray ===============================================   
-    def rgb_to_gray(self, directory_path: str, save_path: str, format_type: str, save_img_gray: str = "off") -> np.ndarray:
-        """
-        Convert RGB images in the specified directory to grayscale.
-
-        **Args:**
-        - directory_path (str): Path to the directory containing image files.
-        - format_type (str): File format (e.g., ".jpg", ".png") to filter images.
-        - save_img_gray (str, optional): Whether to save the grayscale images. Defaults to "off".
-            If set to "on", grayscale images are saved to a subfolder named 'Gray image/'.
-
-        **Returns:**
-        - np.ndarray: A NumPy array containing grayscale images with shape [num_images, height, width].
-
-        **Raises:**
-        - ValueError: If no files are found in the specified directory.
-
-        Notes:
-        - The grayscale images are saved in a subfolder named 'Gray image/' within the specified directory.
-        - The function uses `skimage.color.rgb2gray` for RGB-to-grayscale conversion.
-        
-        **Example:**
-        - obj = ImageProcessor()
-        - img_gray = obj.RGB2Gray(directory_path: str, format_type: str, save_img_gray:str ="on")
-        """
-        # Create an instance of FilePathExtractor to retrieve file paths
-        obj_path = FilePathExtractor(directory_path, format_type=format_type)
-
-        # Get a list of all file paths in the specified directory
-        files_path = obj_path.all_files_path
-
-        # Get corresponding filenames
-        files_name = obj_path.filesname
-
-        # Check if the list of file paths is empty
-        if not files_path: raise ValueError("No files found in the specified directory.")
-
-        # Retrieve the dimensions of the first image to initialize the grayscale array
-        img_height, img_width, _ = io.imread(files_path[0]).shape
-
-        # Initialize a NumPy array to store grayscale images
-        img_gray = np.zeros((len(files_path), img_height, img_width), dtype=np.uint8)
-
-        # Convert each image to grayscale
-        for ind, val in enumerate(files_path):
-            # Read the image, convert it to grayscale, scale back to [0, 255], and store it in the array
-            img_gray[ind] = (color.rgb2gray(io.imread(val)) * 255).astype(np.uint8)
-
-        # Save grayscale images if requested
-        if save_img_gray.lower() == "on":
-            # Create a folder named 'Gray image/' inside the specified save path, if it doesn't already exist
-            os.makedirs(os.path.join(save_path, 'Gray image/'), exist_ok=True)
-
-            # Loop through each image and its corresponding filename
-            for ind, filename in enumerate(files_name):
-                # Save each grayscale image to the 'Gray image/' folder using its original filename
-                io.imsave(fname=os.path.join(save_path, 'Gray image/', filename), arr=img_gray[ind])
-
-            # Print a success message to the console
-            print(Fore.GREEN + "The images have been saved successfully.")
-
-        # Return the grayscale images as a NumPy array
-        return img_gray
     
     
