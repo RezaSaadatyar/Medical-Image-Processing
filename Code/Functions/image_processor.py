@@ -2,8 +2,9 @@ import os
 import shutil
 import cv2 as cv
 import numpy as np
+from colorama import Fore
 from tensorflow import keras
-from skimage import io, transform  # Import scikit-image library
+from skimage import io, transform, color  # Import scikit-image library
 from Functions.filepath_extractor import FilePathExtractor
 
 class ImageProcessor:
@@ -19,11 +20,6 @@ class ImageProcessor:
         **Import module:**
         - from Functions.image_processor import ImageProcessor
         """
-        self.img_gray = None  # Placeholder for grayscale images after processing
-        self.file_names = None  # Placeholder for image file names
-        self.file_path = None  # Placeholder for the path to the image files
-        self.augmente_path = None  # Placeholder for the path to store augmented images
-
     # ============================================ Images convert to ndarray ===================================
     def imgs_to_ndarray(self, directory_path:str, format_type:str) -> np.ndarray:
         """
@@ -43,13 +39,13 @@ class ImageProcessor:
         **Raises:**
         - ValueError: If no files are found in the specified directory.
         """
-        # Create an instance of FilePathExtractor to retrieve file paths
+        # Create an instance of FilePathExtractor to retrieve files path
         obj_path = FilePathExtractor(directory_path, format_type)
         
-        # Get a list of all file paths in the specified directory
-        files_path = obj_path.all_files_path  # List of full file paths for the files
+        # Get a list of all files path in the specified directory
+        files_path = obj_path.all_files_path
 
-        # Check if the list of file paths is empty
+        # Check if the list of files path is empty
         if not files_path: raise ValueError("No files found in the specified directory.")
 
         # Get the total number of image files
@@ -105,12 +101,11 @@ class ImageProcessor:
         # Create an instance of FilePathExtractor to retrieve file paths
         obj_path = FilePathExtractor(directory_path, format_type)
 
-        # Get a list of all file paths in the specified directory
-        files_path = obj_path.all_files_path  # List of full file paths for the files
+        # Get a list of all files path in the specified directory
+        files_path = obj_path.all_files_path
 
-        # Check if the list of file paths is empty
-        if not files_path:
-            raise ValueError("No files found in the specified directory.")
+        # Check if the list of files path is empty
+        if not files_path:  raise ValueError("No files found in the specified directory.")
 
         # Get the total number of image files
         num_files = len(files_path)  # Total number of image files
@@ -216,7 +211,7 @@ class ImageProcessor:
           - num_augmented_imag = 3
         """
         # Create a subfolder for rotated images within the augmented images directory
-        augmente_path = os.path.join(augmente_path, 'Rotated/')
+        augmente_path = os.path.join(augmente_path, 'Augmented/')
 
         # Check if the augmented images folder exists, delete it if so
         if os.path.exists(augmente_path):
@@ -232,14 +227,13 @@ class ImageProcessor:
         # Create an instance of FilePathExtractor to retrieve file paths
         obj_path = FilePathExtractor(directory_path, format_type)
 
-        # Get a list of all file paths in the specified directory
-        files_path = obj_path.all_files_path  # List of full file paths for the files
+        # Get a list of all files path in the specified directory
+        files_path = obj_path.all_files_path
 
-        # Check if the list of file paths is empty
-        if not files_path:
-            raise ValueError("No files found in the specified directory.")
+        # Check if the list of files path is empty
+        if not files_path: raise ValueError("No files found in the specified directory.")
 
-        # Get corresponding filenames
+        # Get corresponding filesname
         file_names = obj_path.filesname
 
         # Read the first image to determine its dimensions
@@ -269,3 +263,69 @@ class ImageProcessor:
 
         # Delete the temporary folder and its contents after processing
         shutil.rmtree(TEMP_DIR)
+    
+    # ============================================== RGB_to_Gray ===============================================   
+    def rgb_to_gray(self, directory_path: str, save_path: str, format_type: str, save_img_gray: str = "off") -> np.ndarray:
+        """
+        Convert RGB images in the specified directory to grayscale.
+
+        **Args:**
+        - directory_path (str): Path to the directory containing image files.
+        - format_type (str): File format (e.g., ".jpg", ".png") to filter images.
+        - save_img_gray (str, optional): Whether to save the grayscale images. Defaults to "off".
+            If set to "on", grayscale images are saved to a subfolder named 'Gray image/'.
+
+        **Returns:**
+        - np.ndarray: A NumPy array containing grayscale images with shape [num_images, height, width].
+
+        **Raises:**
+        - ValueError: If no files are found in the specified directory.
+
+        Notes:
+        - The grayscale images are saved in a subfolder named 'Gray image/' within the specified directory.
+        - The function uses `skimage.color.rgb2gray` for RGB-to-grayscale conversion.
+        
+        **Example:**
+        - obj = ImageProcessor()
+        - img_gray = obj.RGB2Gray(directory_path: str, format_type: str, save_img_gray:str ="on")
+        """
+        # Create an instance of FilePathExtractor to retrieve file paths
+        obj_path = FilePathExtractor(directory_path, format_type=format_type)
+
+        # Get a list of all file paths in the specified directory
+        files_path = obj_path.all_files_path
+
+        # Get corresponding filenames
+        files_name = obj_path.filesname
+
+        # Check if the list of file paths is empty
+        if not files_path: raise ValueError("No files found in the specified directory.")
+
+        # Retrieve the dimensions of the first image to initialize the grayscale array
+        img_height, img_width, _ = io.imread(files_path[0]).shape
+
+        # Initialize a NumPy array to store grayscale images
+        img_gray = np.zeros((len(files_path), img_height, img_width), dtype=np.uint8)
+
+        # Convert each image to grayscale
+        for ind, val in enumerate(files_path):
+            # Read the image, convert it to grayscale, scale back to [0, 255], and store it in the array
+            img_gray[ind] = (color.rgb2gray(io.imread(val)) * 255).astype(np.uint8)
+
+        # Save grayscale images if requested
+        if save_img_gray.lower() == "on":
+            # Create a folder named 'Gray image/' inside the specified save path, if it doesn't already exist
+            os.makedirs(os.path.join(save_path, 'Gray image/'), exist_ok=True)
+
+            # Loop through each image and its corresponding filename
+            for ind, filename in enumerate(files_name):
+                # Save each grayscale image to the 'Gray image/' folder using its original filename
+                io.imsave(fname=os.path.join(save_path, 'Gray image/', filename), arr=img_gray[ind])
+
+            # Print a success message to the console
+            print(Fore.GREEN + "The images have been saved successfully.")
+
+        # Return the grayscale images as a NumPy array
+        return img_gray
+    
+    
