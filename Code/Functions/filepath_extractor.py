@@ -21,7 +21,7 @@ class FilePathExtractor:
         - from Functions.filepath_extractor import FilePathExtractor
 
         **Example:**
-        - obj = FilePathExtractor(file_path, "csv")
+        - obj = FilePathExtractor(file_path, "tif")
           1. files_name = obj.filesname           # List of filename in the directory with the specified extension
           2. folders = obj.folders_path           # List of folders path where the files are located
           3. files_path = obj.all_files_path      # List of full files path for the files
@@ -61,7 +61,7 @@ class FilePathExtractor:
 
         **return:** List of full files path.
         """
-        return self.full_path
+        return sorted(self.full_path)
 
     @property
     def filesname(self) -> list[str]:
@@ -70,7 +70,7 @@ class FilePathExtractor:
 
         **return:** List of filesname.
         """
-        return self.files
+        return sorted(self.files)
 
     @property
     def folders_path(self) -> list[str]:
@@ -79,7 +79,7 @@ class FilePathExtractor:
 
         **return:** List of folders path.
         """
-        return self.folder_path
+        return sorted(self.folder_path)
 
     @property
     def subfoldersname(self) -> list[str]:
@@ -88,4 +88,4 @@ class FilePathExtractor:
 
         **return:** Flattened list of subfolders name.
         """
-        return list(chain.from_iterable(self.subfolder))
+        return sorted(list(chain.from_iterable(self.subfolder)))

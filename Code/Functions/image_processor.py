@@ -1,6 +1,5 @@
 import os
 import shutil
-import cv2 as cv
 import numpy as np
 from colorama import Fore
 from tensorflow import keras
@@ -33,7 +32,9 @@ class ImageProcessor:
            - resized_images = obj.resize_images(data, img_height_resized=255, img_width_resized=255)  # Resize all images to 255x255
            - print(Fore.GREEN + f"Resizing images from {data.shape} to {resized_images.shape}")
         5. Augmentation
-           - img.augmentation(file_path, augmente_path, num_augmented_imag, rotation_range, format_type="tif")
+           - obj.augmentation(file_path, augmente_path, num_augmented_imag, rotation_range, format_type="tif")
+        6. Crop images & masks
+           - cropped_imgs, cropped_masks = obj.crop_images_using_masks(data_path, masks_path, data_format_type, mask_format_type)
         """
     # ============================================ Images convert to ndarray ===================================
     def imgs_to_ndarray(self, directory_path:str, format_type:str) -> np.ndarray:
@@ -67,7 +68,7 @@ class ImageProcessor:
         num_files = len(files_path)  # Total number of image files
 
         # Read the first image to determine its dimensions and type (grayscale or colored)
-        img = cv.imread(files_path[0])[..., ::-1]  # Read the first image and reverse color channels (BGR to RGB)
+        img = io.imread(files_path[0])  # Read the first image
 
         # Check if the image is grayscale or colored
         if img.ndim == 2:  # Grayscale image (2D array)
@@ -87,7 +88,7 @@ class ImageProcessor:
 
         # Load all images into the NumPy array
         for idx, file_path in enumerate(files_path):
-            imgs[idx] = cv.imread(file_path)  # Read and store each image in the array
+            imgs[idx] = io.imread(file_path)  # Read and store each image in the array
 
         # Return the NumPy array containing all images
         return imgs
@@ -231,20 +232,11 @@ class ImageProcessor:
         """
         # Check if the input is grayscale (3D) or colored (4D)
         if data.ndim == 3:  # Grayscale images (no color channels)
-            img_channels = 1  # Grayscale implies 1 channel
             # Initialize an array to store resized grayscale images
             resized_imgs = np.zeros(
                 (data.shape[0], img_height_resized, img_width_resized),
                 dtype=np.uint8  # Use unsigned 8-bit integers for pixel values
             )
-
-            # Loop through each grayscale image in the batch
-            for i in range(data.shape[0]):
-                # Resize the image to the target dimensions and store it
-                resized_imgs[i] = transform.resize(
-                    data[i], (img_height_resized, img_width_resized),
-                    preserve_range=True  # Preserve the range of pixel values
-                )
 
         else:  # Colored images (4D array with channels)
             img_channels = data.shape[-1]  # Get the number of color channels
@@ -254,17 +246,17 @@ class ImageProcessor:
                 dtype=np.uint8  # Use unsigned 8-bit integers for pixel values
             )
 
-            # Loop through each colored image in the batch
-            for i in range(data.shape[0]):
-                # Resize the image to the target dimensions and store it
-                resized_imgs[i] = transform.resize(
-                    data[i], (img_height_resized, img_width_resized),
-                    preserve_range=True  # Preserve the range of pixel values
-                )
+        # Loop through each colored image in the batch
+        for i in range(data.shape[0]):
+            # Resize the image to the target dimensions and store it
+            resized_imgs[i] = transform.resize(
+                data[i], (img_height_resized, img_width_resized),
+                preserve_range=True  # Preserve the range of pixel values
+            )
 
         # Return the resized images
         return resized_imgs
-    
+
     # ============================================= Augmentation ===============================================
     def augmentation(self, directory_path: str, augmente_path: str, num_augmented_imag: int, rotation_range: int,
                  format_type: str) -> None:
@@ -285,7 +277,7 @@ class ImageProcessor:
         
         **Example:**
         - obj = ImageProcessor()
-        - img.augmentation(file_path, augmente_path, num_augmented_imag, rotation_range, format_type="tif")
+        - obj.augmentation(file_path, augmente_path, num_augmented_imag, rotation_range, format_type="tif")
           - rotation_range = 30
           - num_augmented_imag = 3
         """
@@ -343,5 +335,84 @@ class ImageProcessor:
         # Delete the temporary folder and its contents after processing
         shutil.rmtree(TEMP_DIR)
     
-    
-    
+    # ========================================== Crop images & masks ===========================================
+    def mask_based_image_cropping(self, data_path: str, masks_path: str, data_format_type: str, mask_format_type: str) -> np.ndarray:
+        """
+        Crop images and their corresponding masks based on the mask boundaries.
+
+        **Args:**
+        - data_path (str): Path to the directory containing the images.
+        - masks_path (str): Path to the directory containing the masks.
+        - data_format_type (str): File format of the images (e.g., ".jpg", ".png").
+        - mask_format_type (str): File format of the masks (e.g., ".png", ".tif").
+
+        **Returns:**
+        - tuple[np.ndarray, np.ndarray]: A tuple containing two NumPy arrays:
+            - cropped_imgs: Array of cropped images with shape [num_images, height, width, channels].
+            - cropped_masks: Array of cropped masks with shape [num_images, height, width].
+
+        **Notes:**
+        - The masks are expected to be binary (0 for background, 255 for foreground).
+        - The images and masks are resized back to their original dimensions after cropping.
+        
+        **Example:**
+        - obj = ImageProcessor()
+        - cropped_imgs, cropped_masks = obj.crop_images_using_masks(data_path, masks_path, data_format_type, mask_format_type)
+        """
+        # Create an instance of FilePathExtractor for images and masks
+        obj_data = FilePathExtractor(data_path, format_type=data_format_type)
+        obj_masks = FilePathExtractor(masks_path, format_type=mask_format_type)
+
+        # Get filenames and file paths for images and masks
+        data_filesname = obj_data.filesname
+        data_filespath = obj_data.all_files_path
+        masks_filespath = obj_masks.all_files_path
+
+        # Read the first image to determine its shape
+        first_img_shape = io.imread(data_filespath[0]).shape
+
+        # Initialize an array to store cropped images
+        cropped_imgs = np.zeros((len(data_filesname), *first_img_shape), dtype=np.uint8)
+
+        # Read the first mask to determine its shape
+        first_mask_shape = io.imread(masks_filespath[0]).shape
+
+        # Initialize an array to store cropped masks
+        cropped_masks = np.zeros((len(masks_filespath), *first_mask_shape), dtype=bool)
+
+        # Loop through each image and its corresponding mask
+        for ind, val in enumerate(data_filespath):
+            # Read the image and mask
+            img = io.imread(val)
+            mask = io.imread(masks_filespath[ind])
+
+            # Find the coordinates of the mask's foreground (where mask == 255)
+            y_coord, x_coord = np.where(mask == 255)
+
+            # Calculate the bounding box for cropping
+            y_min = min(y_coord)
+            y_max = max(y_coord)
+            x_min = min(x_coord)
+            x_max = max(x_coord)
+
+            # Crop and resize the image to the original dimensions
+            cropped_imgs[ind] = transform.resize(
+                img[y_min:y_max, x_min:x_max],
+                first_img_shape,
+                mode='constant',
+                anti_aliasing=True,
+                preserve_range=True
+            )
+
+            # Crop and resize the mask to the original dimensions
+            cropped_masks[ind] = transform.resize(
+                mask[y_min:y_max, x_min:x_max],
+                first_mask_shape,
+                mode='constant',
+                anti_aliasing=True,
+                preserve_range=True
+            )
+
+        # Return the cropped images and masks
+        return cropped_imgs, cropped_masks
+        
