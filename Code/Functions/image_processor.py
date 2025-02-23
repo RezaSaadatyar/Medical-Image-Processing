@@ -335,7 +335,7 @@ class ImageProcessor:
         # Delete the temporary folder and its contents after processing
         shutil.rmtree(TEMP_DIR)
     
-    # ========================================== Crop images & masks ===========================================
+    # ======================================= Mask-Based Image Cropping ========================================
     def mask_based_image_cropping(self, data_path: str, masks_path: str, data_format_type: str, mask_format_type: str) -> np.ndarray:
         """
         Crop images and their corresponding masks based on the mask boundaries.
