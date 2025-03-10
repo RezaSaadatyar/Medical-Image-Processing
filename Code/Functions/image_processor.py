@@ -131,13 +131,20 @@ class ImageProcessor:
 
         # Initialize a boolean NumPy array to store all masks
         # Shape: [num_files, height, width, 2], where 2 represents background and foreground
-        masks = np.zeros((num_files, mask.shape[0], mask.shape[1], 2), dtype=bool)
+        # masks = np.zeros((num_files, mask.shape[0], mask.shape[1], 2), dtype=bool)
+        
+        masks = np.zeros((num_files, mask.shape[0], mask.shape[1], 1), dtype=bool)
+        
+        # Load all images into the NumPy array
+        for idx, file_path in enumerate(files_path):
+            # Read and store each image in the array
+            masks[idx] = np.expand_dims(io.imread(file_path) / 255.0, axis=-1)  
 
-        # Iterate through all the input files and process each mask
-        for ind, val in enumerate(files_path):  # Progressively iterate through all the input files
-            mask = np.squeeze(io.imread(val)).astype(bool)  # Load and convert each mask to boolean
-            masks[ind, :, :, 0] = ~mask  # Background (inverse of mask)
-            masks[ind, :, :, 1] = mask   # Foreground (actual mask)
+        # # Iterate through all the input files and process each mask
+        # for ind, val in enumerate(files_path):  # Progressively iterate through all the input files
+        #     mask = np.squeeze(io.imread(val)).astype(bool)  # Load and convert each mask to boolean
+        #     masks[ind, :, :, 0] = ~mask  # Background (inverse of mask)
+        #     masks[ind, :, :, 1] = mask   # Foreground (actual mask)
 
         # Return the boolean NumPy array containing all masks
         return masks
