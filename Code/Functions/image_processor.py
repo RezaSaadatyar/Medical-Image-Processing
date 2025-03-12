@@ -138,7 +138,7 @@ class ImageProcessor:
         # Load all images into the NumPy array
         for idx, file_path in enumerate(files_path):
             # Read and store each image in the array
-            masks[idx] = np.expand_dims(io.imread(file_path) / 255.0, axis=-1)  
+            masks[idx] = np.expand_dims(io.imread(file_path), axis=-1)  
 
         # # Iterate through all the input files and process each mask
         # for ind, val in enumerate(files_path):  # Progressively iterate through all the input files
