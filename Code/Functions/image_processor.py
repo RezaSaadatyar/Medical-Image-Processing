@@ -136,11 +136,11 @@ class ImageProcessor:
         masks = np.zeros((num_files, mask.shape[0], mask.shape[1], 1), dtype=bool)
         
         # Load all images into the NumPy array
-        for idx, file_path in enumerate(files_path):
+        for ind, file_path in enumerate(files_path):
             # Read and store each image in the array
-            masks[idx] = np.expand_dims(io.imread(file_path), axis=-1)  
-
-        # # Iterate through all the input files and process each mask
+            masks[ind] = np.expand_dims(io.imread(file_path), axis=-1)  
+        
+        # Iterate through all the input files and process each mask
         # for ind, val in enumerate(files_path):  # Progressively iterate through all the input files
         #     mask = np.squeeze(io.imread(val)).astype(bool)  # Load and convert each mask to boolean
         #     masks[ind, :, :, 0] = ~mask  # Background (inverse of mask)
