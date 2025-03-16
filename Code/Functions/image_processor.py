@@ -21,10 +21,10 @@ class ImageProcessor:
         
         obj = ImageProcessor()
         1. Images into ndarray
-           - data = obj.imgs_to_ndarray(directory_path, format_type="tif")
+           - data = obj.read_img(directory_path, format_type="tif")
            - print(Fore.GREEN + f"{data.shape = }")
         2. Masks into boolean
-           - masks = obj.masks_to_boolean(directory_path, format_type="TIF")
+           - masks = obj.masks_to_binary(directory_path, format_type="TIF")
            - print(Fore.GREEN + f"{masks.shape = }"
         3. Rgb into gray
            - img_gray = obj.rgb_to_gray(directory_path, save_path, format_type="tif", save_img_gray="off")
@@ -37,7 +37,7 @@ class ImageProcessor:
            - cropped_imgs, cropped_masks = obj.crop_images_using_masks(data_path, masks_path, data_format_type, mask_format_type)
         """
     # ============================================ Images convert to ndarray ===================================
-    def imgs_to_ndarray(self, directory_path:str, format_type:str) -> np.ndarray:
+    def read_img(self, directory_path:str, format_type:str) -> np.ndarray:
         """
         Convert images from a specified directory into a NumPy array.
 
@@ -50,7 +50,7 @@ class ImageProcessor:
 
         **Example:**
         - obj = ImageProcessor()
-        - imgs = obj.imgs_to_ndarray(directory_path, format_type="tif")
+        - imgs = obj.read_img(directory_path, format_type="tif")
 
         **Raises:**
         - ValueError: If no files are found in the specified directory.
@@ -149,6 +149,54 @@ class ImageProcessor:
         # Return the boolean NumPy array containing all masks
         return masks
     
+    # ============================================ Masks convert to boolean ====================================
+    def masks_to_binary(self, directory_path:str, format_type:str="TIF") -> np.ndarray:
+        """
+        Convert mask images from a specified directory into a binary NumPy array.
+
+        **Args:**
+        - directory_path (str): The path to the directory containing the mask images.
+        - format_type (str, optional): The file format of the mask images (default is "TIF").
+
+        **Returns:**
+        - numpy.ndarray: A binary NumPy array of shape [num_files, height, width, 1], where:
+            - 0 represents background
+            - 1 represents foreground (mask)
+
+        **Example:**
+        - obj = ImageProcessor()
+        - masks = obj.masks_to_binary(directory_path, format_type="TIF")
+
+        **Raises:**
+            ValueError: If no files are found in the specified directory.
+        """
+        # Create an instance of FilePathExtractor to retrieve file paths
+        obj_path = FilePathExtractor(directory_path, format_type)
+
+        # Get a list of all files path in the specified directory
+        files_path = obj_path.all_files_path
+
+        # Check if the list of files path is empty
+        if not files_path:  raise ValueError("No files found in the specified directory.")
+
+        # Get the total number of image files
+        num_files = len(files_path)  # Total number of image files
+
+        # Read the first image to determine its dimensions
+        mask = io.imread(files_path[0])  # Read the first mask image using scikit-image
+
+        # Initialize a binary NumPy array to store all masks
+        # Shape: [num_files, height, width, 1]
+        masks = np.zeros((num_files, mask.shape[0], mask.shape[1], 1), dtype=np.uint8)
+        
+        # Load all images into the NumPy array
+        for ind, file_path in enumerate(files_path):
+            # Read image and convert to binary (0 and 1)
+            mask = io.imread(file_path)
+            mask = (mask > 0).astype(np.uint8)  # Convert to binary
+            masks[ind] = np.expand_dims(mask, axis=-1)
+
+        return masks
     # ============================================== RGB_to_Gray ===============================================   
     def rgb_to_gray(self, directory_path: str, save_path: str, format_type: str, save_img_gray: str = "off") -> np.ndarray:
         """
@@ -328,7 +376,7 @@ class ImageProcessor:
         img_aug = Data_Gen.flow_from_directory(
             directory_path,              # Parent directory of Temp
             classes=['Temp'],            # Specify the subfolder 'Temp' as the target
-            batch_size=1,                # Process one image at a time
+            batch_size=1,                # ?Process one image at a time
             save_to_dir=augmente_path,   # Save augmented images to the Rotated folder
             save_prefix='Aug',           # Prefix for augmented images
             target_size=(dat.shape[0], dat.shape[1]),  # Resize images to the specified dimensions
