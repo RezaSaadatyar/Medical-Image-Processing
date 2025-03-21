@@ -21,7 +21,7 @@ class ImageProcessor:
         
         obj = ImageProcessor()
         1. Images into ndarray
-           - data = obj.read_img(directory_path, format_type="tif")
+           - data = obj.read_images(directory_path, format_type="tif")
            - print(Fore.GREEN + f"{data.shape = }")
         2. Masks into boolean
            - masks = obj.masks_to_binary(directory_path, format_type="TIF")
@@ -37,7 +37,7 @@ class ImageProcessor:
            - cropped_imgs, cropped_masks = obj.crop_images_using_masks(data_path, masks_path, data_format_type, mask_format_type)
         """
     # ============================================ Images convert to ndarray ===================================
-    def read_img(self, directory_path:str, format_type:str) -> np.ndarray:
+    def read_images(self, directory_path:str, format_type:str) -> np.ndarray:
         """
         Convert images from a specified directory into a NumPy array.
 
@@ -50,7 +50,7 @@ class ImageProcessor:
 
         **Example:**
         - obj = ImageProcessor()
-        - imgs = obj.read_img(directory_path, format_type="tif")
+        - imgs = obj.read_images(directory_path, format_type="tif")
 
         **Raises:**
         - ValueError: If no files are found in the specified directory.
@@ -77,14 +77,14 @@ class ImageProcessor:
             # Initialize an empty NumPy array to store all grayscale images
             imgs = np.zeros((num_files, img_height, img_width),
                             dtype=np.uint8  # Pixel values are stored as unsigned 8-bit integers
-                        )
+                           )
         else:  # Colored image (e.g., RGB) (3D array)
             img_height, img_width, img_channels = img.shape  # Get image dimensions (height, width, channels)
-            
+
             # Initialize an empty NumPy array to store all colored images
             imgs = np.zeros((num_files, img_height, img_width, img_channels),
                             dtype=np.uint8
-                        )
+                            )
 
         # Load all images into the NumPy array
         for idx, file_path in enumerate(files_path):
