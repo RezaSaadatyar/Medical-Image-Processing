@@ -23,7 +23,7 @@ class ImageProcessor:
         1. Images into ndarray
            - data = obj.read_images(directory_path, format_type="tif")
            - print(Fore.GREEN + f"{data.shape = }")
-        2. Masks into boolean
+        2. Masks into binary
            - masks = obj.masks_to_binary(directory_path, format_type="TIF")
            - print(Fore.GREEN + f"{masks.shape = }"
         3. Rgb into gray
@@ -93,63 +93,7 @@ class ImageProcessor:
         # Return the NumPy array containing all images
         return imgs
     
-    # ============================================ Maskss convert to boolean ===================================
-    def masks_to_boolean(self, directory_path:str, format_type:str="TIF") -> bool:
-        """
-        Convert mask images from a specified directory into a boolean NumPy array.
-
-        **Args:**
-        - directory_path (str): The path to the directory containing the mask images.
-        - format_type (str, optional): The file format of the mask images (default is "TIF").
-
-        **Returns:**
-        - numpy.ndarray: A boolean NumPy array of shape [num_files, height, width, 2], where:
-            - masks[..., 0] represents the background (inverse of the mask).
-            - masks[..., 1] represents the foreground (actual mask).
-
-        **Example:**
-        - obj = ImageProcessor()
-        - masks = obj.masks_to_boolean(directory_path, format_type="TIF")
-
-        **Raises:**
-            ValueError: If no files are found in the specified directory.
-        """
-        # Create an instance of FilePathExtractor to retrieve file paths
-        obj_path = FilePathExtractor(directory_path, format_type)
-
-        # Get a list of all files path in the specified directory
-        files_path = obj_path.all_files_path
-
-        # Check if the list of files path is empty
-        if not files_path:  raise ValueError("No files found in the specified directory.")
-
-        # Get the total number of image files
-        num_files = len(files_path)  # Total number of image files
-
-        # Read the first image to determine its dimensions
-        mask = io.imread(files_path[0])  # Read the first mask image using scikit-image
-
-        # Initialize a boolean NumPy array to store all masks
-        # Shape: [num_files, height, width, 2], where 2 represents background and foreground
-        # masks = np.zeros((num_files, mask.shape[0], mask.shape[1], 2), dtype=bool)
-        
-        masks = np.zeros((num_files, mask.shape[0], mask.shape[1], 1), dtype=bool)
-        
-        # Load all images into the NumPy array
-        for ind, file_path in enumerate(files_path):
-            # Read and store each image in the array
-            masks[ind] = np.expand_dims(io.imread(file_path), axis=-1)  
-        
-        # Iterate through all the input files and process each mask
-        # for ind, val in enumerate(files_path):  # Progressively iterate through all the input files
-        #     mask = np.squeeze(io.imread(val)).astype(bool)  # Load and convert each mask to boolean
-        #     masks[ind, :, :, 0] = ~mask  # Background (inverse of mask)
-        #     masks[ind, :, :, 1] = mask   # Foreground (actual mask)
-
-        # Return the boolean NumPy array containing all masks
-        return masks
-    
-    # ============================================ Masks convert to boolean ====================================
+    # ============================================ Masks convert to binary =====================================
     def masks_to_binary(self, directory_path:str, format_type:str="TIF") -> np.ndarray:
         """
         Convert mask images from a specified directory into a binary NumPy array.

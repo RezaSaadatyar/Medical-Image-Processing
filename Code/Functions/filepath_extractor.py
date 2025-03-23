@@ -3,7 +3,6 @@
 
 import os  # Import the os module for interacting with the operating system (e.g., file system traversal)
 from itertools import chain  # Import chain for flattening nested lists
-
 class FilePathExtractor:
     """
     A class for reading and processing files in a directory with a specific format.
