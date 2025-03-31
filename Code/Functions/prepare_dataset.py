@@ -7,53 +7,46 @@ from sklearn.model_selection import train_test_split
 def prepare_dataset(
     data: Union[np.ndarray, tf.Tensor], 
     labels: Union[np.ndarray, tf.Tensor], 
-    train_size: float = 0.8, 
-    valid_size: float = 0.16, 
-    batch_size: int = 16, 
+    train_size: float = 0.7,  
+    valid_size: float = 0.15, 
+    batch_size: int = 8,  
     shuffle_train: bool = True, 
     shuffle_buffer_size: int = 1000
 ) -> Tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
     """
     This function handles the complete pipeline from raw data to optimized TensorFlow Dataset objects,
     including data splitting, shuffling, batching, and prefetching for optimal performance.
-    
+
     Args:
         data: Input features as either numpy array or TensorFlow tensor
                Shape should be (num_samples, ...features_dims)
         labels: Corresponding labels as either numpy array or TensorFlow tensor
                 Shape should be (num_samples, ...label_dims)
-        train_size: Proportion of total data to use for training (0.0 to 1.0)
-        valid_size: Proportion of total data to use for validation (0.0 to 1.0)
-        batch_size: Number of samples per training batch (positive integer)
-        shuffle_train: Whether to shuffle training data (recommended for training)
+        train_size: Proportion of data for training
+        valid_size: Proportion of data for validation
+        batch_size: Number of samples per batch (positive integer)
+        shuffle_train: Whether to shuffle training data
         shuffle_buffer_size: Size of buffer used for shuffling (larger = better shuffling but more memory)
     
     Returns:
-        A tuple containing three tf.data.Dataset objects in order:
-        - train_dataset: Dataset for model training
-        - valid_dataset: Dataset for validation during training
-        - test_dataset: Dataset for final evaluation
-    
-    Raises:
-        ValueError: If input sizes are invalid or data/labels have mismatched lengths
+        Tuple of (train_dataset, valid_dataset, test_dataset)
     """
     
-    # ============================================ INPUT VALIDATION ============================================
-    # Validate the split proportions make sense
-    if train_size + valid_size > 1.0:
-        raise ValueError("train_size + valid_size must not exceed 1.0 (test_size would be negative)")
-    if train_size < valid_size:
-        raise ValueError("Training set should typically be larger than validation set")
+    # Validate split proportions
+    if train_size + valid_size > 1.0: raise ValueError("train_size + valid_size must not exceed 1.0")
+    if train_size < valid_size: raise ValueError("Training set should typically be larger than validation set")
 
-    # Convert TensorFlow tensors to numpy arrays for sklearn splitting
-    if tf.is_tensor(data):
-        data = data.numpy()
-    if tf.is_tensor(labels):
-        labels = labels.numpy()
+    # Convert TensorFlow tensors to numpy arrays
+    if tf.is_tensor(data): data = data.numpy()
+    if tf.is_tensor(labels): labels = labels.numpy()
 
-    # Verify data and labels have compatible shapes
+    # Verify data and labels compatibility
     if len(data) != len(labels):
         raise ValueError(f"Mismatched lengths: data has {len(data)} samples but labels has {len(labels)}")
+
+    # Normalize images to [0, 1]
+    if data.max() > 1.0:  # Assuming data is in [0, 255]
+        data = data / 255.0
 
     # ======================================== DATA SPLITTING ==================================================
     # First split separates test set from training+validation
@@ -77,20 +70,19 @@ def prepare_dataset(
         random_state=24,  # Same seed for consistency
         # stratify=y_train_val if len(set(y_train_val)) > 1 else None
     )
-
+    
     # ======================================= DATASET CREATION =================================================
     # Create TensorFlow Dataset objects with proper type casting
     train_dataset = tf.data.Dataset.from_tensor_slices(
         (tf.cast(x_train, tf.float32),  # Convert features to float32
         tf.cast(y_train, tf.float32)    # Convert labels to float32
     ))
+
     valid_dataset = tf.data.Dataset.from_tensor_slices(
-        (tf.cast(x_valid, tf.float32), 
-        tf.cast(y_valid, tf.float32))
+        (tf.cast(x_valid, tf.float32), tf.cast(y_valid, tf.float32))
     )
     test_dataset = tf.data.Dataset.from_tensor_slices(
-        (tf.cast(x_test, tf.float32), 
-        tf.cast(y_test, tf.float32))
+        (tf.cast(x_test, tf.float32), tf.cast(y_test, tf.float32))
     )
     
     # ====================================== DATASET OPTIMIZATION ==============================================
@@ -111,7 +103,7 @@ def prepare_dataset(
     valid_dataset = valid_dataset.prefetch(tf.data.AUTOTUNE)
     test_dataset = test_dataset.prefetch(tf.data.AUTOTUNE)
 
-    # ============================================ VERIFICATION OUTPUT =========================================
+    # Print dataset info
     print(f"Training set:   {x_train.shape} features, {y_train.shape} labels")
     print(f"Validation set: {x_valid.shape} features, {y_valid.shape} labels")
     print(f"Test set:       {x_test.shape} features, {y_test.shape} labels")
