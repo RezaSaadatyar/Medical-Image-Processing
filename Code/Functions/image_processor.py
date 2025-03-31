@@ -1,7 +1,10 @@
 import os
+import cv2
 import shutil
+from networkx import is_path
 import numpy as np
 from colorama import Fore
+from platformdirs import AppDirs
 from tensorflow import keras
 from skimage import io, transform, color  # Import scikit-image library
 from Functions.filepath_extractor import FilePathExtractor
@@ -37,26 +40,31 @@ class ImageProcessor:
            - cropped_imgs, cropped_masks = obj.crop_images_using_masks(data_path, masks_path, data_format_type, mask_format_type)
         """
     # ============================================ Images convert to ndarray ===================================
-    def read_images(self, directory_path:str, format_type:str) -> np.ndarray:
+    def read_images(self, image_path: str, format_type: str, resize: tuple = None, normalize: bool = False, 
+                to_grayscale: bool = False) -> np.ndarray:
         """
-        Convert images from a specified directory into a NumPy array.
+        Convert images from a specified directory into a NumPy array with optional processing.
 
-        **Args:**
-        - directory_path (str): The path to the directory containing the images.
+        Args:
+        - image_path (str): The path to the directory containing the images.
         - format_type (str): The file format of the images (e.g., 'jpg', 'png').
+        - resize (tuple, optional): Target size as (height, width). Default is None.
+        - normalize (bool, optional): Normalize pixel values if max > 1. Default is False.
+        - to_grayscale (bool, optional): Convert images to grayscale. Default is False.
 
-        **Returns:**
-        - numpy.ndarray: A NumPy array containing all the images. If the images are grayscale, the array shape will be (num_files, height, width). If the images are colored (e.g., RGB), the array shape will be (num_files, height, width, channels).
+        Returns:
+        - numpy.ndarray: A NumPy array containing all processed images.
 
-        **Example:**
+        Example:
         - obj = ImageProcessor()
-        - imgs = obj.read_images(directory_path, format_type="tif")
+        - imgs = obj.read_images(image_path, format_type="tif", resize=(224, 224), 
+                                normalize=False, to_grayscale=False)
 
-        **Raises:**
+        Raises:
         - ValueError: If no files are found in the specified directory.
         """
         # Create an instance of FilePathExtractor to retrieve files path
-        obj_path = FilePathExtractor(directory_path, format_type)
+        obj_path = FilePathExtractor(image_path, format_type)
         
         # Get a list of all files path in the specified directory
         files_path = obj_path.all_files_path
@@ -65,202 +73,231 @@ class ImageProcessor:
         if not files_path: raise ValueError("No files found in the specified directory.")
 
         # Get the total number of image files
-        num_files = len(files_path)  # Total number of image files
+        num_files = len(files_path)
 
-        # Read the first image to determine its dimensions and type (grayscale or colored)
-        img = io.imread(files_path[0])  # Read the first image
+        # Read the first image to determine base dimensions
+        img = io.imread(files_path[0])
+        # img = cv2.imread(files_path[0])
+        
+        # Convert to grayscale if specified
+        if to_grayscale and img.ndim == 3: img = color.rgb2gray(img)
+        # if to_grayscale: img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # Set target dimensions
+        if resize:
+            img_height, img_width = resize
+        else:
+            img_height, img_width = img.shape[:2]
 
-        # Check if the image is grayscale or colored
-        if img.ndim == 2:  # Grayscale image (2D array)
-            img_height, img_width = img.shape  # Get image dimensions (height, width)
-            
-            # Initialize an empty NumPy array to store all grayscale images
-            imgs = np.zeros((num_files, img_height, img_width),
-                            dtype=np.uint8  # Pixel values are stored as unsigned 8-bit integers
-                           )
-        else:  # Colored image (e.g., RGB) (3D array)
-            img_height, img_width, img_channels = img.shape  # Get image dimensions (height, width, channels)
+        # Determine channels based on grayscale option
+        channels = 1 if to_grayscale or img.ndim == 2 else img.shape[-1] if img.ndim == 3 else 1
 
-            # Initialize an empty NumPy array to store all colored images
-            imgs = np.zeros((num_files, img_height, img_width, img_channels),
-                            dtype=np.uint8
-                            )
+        # Initialize array with appropriate shape
+        imgs = np.zeros((num_files, img_height, img_width, channels),
+                    dtype=np.float32 if normalize else np.uint8)
 
-        # Load all images into the NumPy array
+        # Load and process all images
         for idx, file_path in enumerate(files_path):
-            imgs[idx] = io.imread(file_path)  # Read and store each image in the array
-
-        # Return the NumPy array containing all images
+            # Read image
+            img = io.imread(file_path)
+            # img = cv2.imread(file_path)
+            
+            # Convert to grayscale if specified
+            if to_grayscale and img.ndim == 3: img = color.rgb2gray(img)
+            # if to_grayscale: img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                
+            # Reshape if grayscale image lacks channel dimension
+            if img.ndim == 2: img = np.expand_dims(img, axis=-1)
+                
+            # Resize if specified
+            if resize:
+                img = transform.resize(img, (img_height, img_width, channels), preserve_range=True)
+                # img = cv2.resize(img, (img_width, img_height))
+            
+            # Normalize if specified and max value exceeds 1
+            if normalize and img.max() > 1: img = img / 255.0
+                
+            imgs[idx] = img
+        
+        print(Fore.GREEN + f"Image shape: {imgs.shape}")
+        
         return imgs
     
     # ============================================ Masks convert to binary =====================================
-    def masks_to_binary(self, directory_path:str, format_type:str="TIF") -> np.ndarray:
+    def read_masks(self, mask_path: str, format_type: str = "TIF", resize: tuple = None, 
+                    normalize: bool = False) -> np.ndarray:
         """
-        Convert mask images from a specified directory into a binary NumPy array.
+        Convert mask images from a specified directory into a binary or multi-class NumPy array 
+        based on the mask type, using OpenCV, and count the number of classes.
 
-        **Args:**
-        - directory_path (str): The path to the directory containing the mask images.
+        Args:
+        - mask_path (str): The path to the directory containing the mask images.
         - format_type (str, optional): The file format of the mask images (default is "TIF").
+        - resize (tuple, optional): Target size as (height, width). Default is None.
+        - normalize (bool, optional): Normalize pixel values to [0, 1] if max > 1. Default is False.
 
-        **Returns:**
-        - numpy.ndarray: A binary NumPy array of shape [num_files, height, width, 1], where:
-            - 0 represents background
-            - 1 represents foreground (mask)
+        Returns:
+        - numpy.ndarray: A NumPy array of shape [num_files, height, width, 1], where:
+            - Binary: 0 (background), 1 (foreground) if mask has 2 unique values.
+            - Multi-class: Integer labels (e.g., 0, 1, 2, ...) if mask has >2 unique values.
+            - Normalized to [0, 1] if normalize=True.
 
-        **Example:**
+        Example:
         - obj = ImageProcessor()
-        - masks = obj.masks_to_binary(directory_path, format_type="TIF")
+        - masks = obj.masks_to_format(mask_path, format_type="TIF", resize=(224, 224))
 
-        **Raises:**
-            ValueError: If no files are found in the specified directory.
-        """
-        # Create an instance of FilePathExtractor to retrieve file paths
-        obj_path = FilePathExtractor(directory_path, format_type)
-
-        # Get a list of all files path in the specified directory
-        files_path = obj_path.all_files_path
-
-        # Check if the list of files path is empty
-        if not files_path:  raise ValueError("No files found in the specified directory.")
-
-        # Get the total number of image files
-        num_files = len(files_path)  # Total number of image files
-
-        # Read the first image to determine its dimensions
-        mask = io.imread(files_path[0])  # Read the first mask image using scikit-image
-
-        # Initialize a binary NumPy array to store all masks
-        # Shape: [num_files, height, width, 1]
-        masks = np.zeros((num_files, mask.shape[0], mask.shape[1], 1), dtype=np.uint8)
-        
-        # Load all images into the NumPy array
-        for ind, file_path in enumerate(files_path):
-            # Read image and convert to binary (0 and 1)
-            mask = io.imread(file_path)
-            mask = (mask > 0).astype(np.uint8)  # Convert to binary
-            masks[ind] = np.expand_dims(mask, axis=-1)
-
-        return masks
-    # ============================================== RGB_to_Gray ===============================================   
-    def rgb_to_gray(self, directory_path: str, save_path: str, format_type: str, save_img_gray: str = "off") -> np.ndarray:
-        """
-        Convert RGB images in the specified directory to grayscale.
-
-        **Args:**
-        - directory_path (str): Path to the directory containing image files.
-        - format_type (str): File format (e.g., ".jpg", ".png") to filter images.
-        - save_img_gray (str, optional): Whether to save the grayscale images. Defaults to "off".
-            If set to "on", grayscale images are saved to a subfolder named 'Gray image/'.
-
-        **Returns:**
-        - np.ndarray: A NumPy array containing grayscale images with shape [num_images, height, width].
-
-        **Raises:**
+        Raises:
         - ValueError: If no files are found in the specified directory.
-
-        Notes:
-        - The grayscale images are saved in a subfolder named 'Gray image/' within the specified directory.
-        - The function uses `skimage.color.rgb2gray` for RGB-to-grayscale conversion.
-        
-        **Example:**
-        - obj = ImageProcessor()
-        - img_gray = obj.RGB2Gray(directory_path, save_path, format_type, save_img_gray="off")
         """
         # Create an instance of FilePathExtractor to retrieve file paths
-        obj_path = FilePathExtractor(directory_path, format_type=format_type)
-
-        # Get a list of all file paths in the specified directory
+        obj_path = FilePathExtractor(mask_path, format_type)
         files_path = obj_path.all_files_path
 
-        # Get corresponding filenames
-        files_name = obj_path.filesname
-
-        # Check if the list of file paths is empty
         if not files_path: raise ValueError("No files found in the specified directory.")
 
-        # Retrieve the dimensions of the first image to initialize the grayscale array
-        img_height, img_width, _ = io.imread(files_path[0]).shape
+        num_files = len(files_path)
+        # Read the first mask to determine dimensions and initial type
+        mask = cv2.imread(files_path[0], cv2.IMREAD_GRAYSCALE)
 
-        # Initialize a NumPy array to store grayscale images
-        img_gray = np.zeros((len(files_path), img_height, img_width), dtype=np.uint8)
+        # Set target dimensions
+        img_height, img_width = resize if resize else mask.shape[:2]
 
-        # Convert each image to grayscale
-        for ind, val in enumerate(files_path):
-            # Read the image, convert it to grayscale, scale back to [0, 255], and store it in the array
-            img_gray[ind] = (color.rgb2gray(io.imread(val)) * 255).astype(np.uint8)
+        # Determine if the mask is binary or multi-class based on unique values in first mask
+        unique_values = np.unique(mask)
+        is_binary = len(unique_values) <= 2  # Binary if 2 or fewer unique values
 
-        # Save grayscale images if requested
-        if save_img_gray.lower() == "on":
-            # Create a folder named 'Gray image/' inside the specified save path, if it doesn't already exist
-            os.makedirs(os.path.join(save_path, 'Gray image/'), exist_ok=True)
+        # Initialize array; use float32 if normalizing, uint8 otherwise
+        masks = np.zeros((num_files, img_height, img_width, 1),
+                        dtype=np.float32 if normalize else np.uint8)
 
-            # Loop through each image and its corresponding filename
-            for ind, filename in enumerate(files_name):
-                # Save each grayscale image to the 'Gray image/' folder using its original filename
-                io.imsave(fname=os.path.join(save_path, 'Gray image/', filename), arr=img_gray[ind])
+        # Process all masks
+        for ind, file_path in enumerate(files_path):
+            # Read mask in grayscale mode
+            mask = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
 
-            # Print a success message to the console
-            print(Fore.GREEN + "The images have been saved successfully.")
+            # Handle binary or multi-class conversion
+            if is_binary:
+                # Convert to binary (0 and 1)
+                mask = (mask > 0).astype(np.uint8)
+            else:
+                # Preserve multi-class labels (no thresholding)
+                mask = mask.astype(np.uint8)  # Ensure uint8 unless normalized
 
-        # Return the grayscale images as a NumPy array
-        return img_gray
+            # Normalize if specified and max value exceeds 1
+            if normalize and mask.max() > 1:  mask = mask / mask.max()  # Scale to [0, 1] based on max value
+
+            # Resize if specified
+            if resize:
+                mask = cv2.resize(mask, (img_width, img_height), 
+                                interpolation=cv2.INTER_NEAREST)  # Preserve discrete values
+                if is_binary:
+                    mask = (mask > 0).astype(np.uint8)  # Re-binarize after resizing
+
+            # Add channel dimension and store
+            masks[ind] = np.expand_dims(mask, axis=-1)
+
+        # Analyze the final masks array for class counts
+        unique_classes, class_counts = np.unique(masks, return_counts=True)
+        num_classes = len(unique_classes)
+
+        # Print mask type and class information
+        print(f"Detected mask type: {'Binary' if is_binary else 'Multi-class'} "
+            f"based on first mask with {len(unique_values)} unique values")
+        print(Fore.GREEN + f"{masks.shape = }")
+        print(Fore.YELLOW + f"Total number of classes in masks: {num_classes}")
+
+        # Detailed class counts
+        if is_binary and not normalize:
+            ones_count = np.sum(masks == 1)
+            zeros_count = np.sum(masks == 0)
+            print(Fore.YELLOW + f"Number of 1s (foreground): {ones_count}")
+            print(Fore.YELLOW + f"Number of 0s (background): {zeros_count}")
+        else:
+            print(Fore.YELLOW + "Class counts in masks:")
+            for cls, count in zip(unique_classes, class_counts):
+                if normalize:
+                    print(Fore.YELLOW + f"  Class {cls:.2f}: {count}")
+                else:
+                    print(Fore.YELLOW + f"  Class {int(cls)}: {count}")
+
+        return masks
+      
+    # ============================================== RGB_to_Gray ===============================================
+    def save_grayscale_images(images: np.ndarray, output_path: str, folder_name: str = "Gray image") -> None:
+        """
+        Save images as grayscale to a specified directory, converting from RGB/BGR if needed.
+
+        Args:
+        - images (np.ndarray): A NumPy array of shape (num_files, height, width, channels).
+        - output_path (str): The directory path where grayscale images will be saved.
+        - folder_name (str, optional): The name of the folder to save the images in. Defaults to "Gray image".
+
+        Returns:
+        - None: Saves converted images to disk if RGB/BGR, otherwise prints a message.
+
+        Raises:
+        - ValueError: If the input images have an unexpected number of channels (not 1 or 3).
+        - OSError: If the output directory cannot be created or accessed, or if saving an image fails.
+        """
+        # Check if images is a NumPy array with the expected shape
+        if not isinstance(images, np.ndarray) or len(images.shape) != 4:
+            raise ValueError("Input 'images' must be a 4D NumPy array (num_files, height, width, channels)")
+
+        num_files, height, width, channels = images.shape
+
+        # Validate channel count
+        if channels not in [1, 3]:
+            raise ValueError(f"Unexpected number of channels: {channels}. Expected 1 (grayscale) or 3 (RGB/BGR)")
+
+        # Case 1: Images are already grayscale (1 channel)
+        if channels == 1:
+            print("Images are already grayscale; no conversion or saving needed.")
+            return
+
+        # Case 2: Images are RGB/BGR (3 channels), convert to grayscale and save
+        # Create output directory if it doesn’t exist
+        output_folder_path = os.path.join(output_path, folder_name)
+        os.makedirs(output_folder_path, exist_ok=True)
+
+        for i in range(num_files):
+            # Extract the RGB/BGR image
+            color_image = images[i, :, :, :]  # Shape: (height, width, 3)
+
+            # If normalized (float values in [0, 1]), scale to [0, 255] for processing
+            # This block ensures that the color_image is in the correct format (uint8) for OpenCV to process it correctly.
+            # If the image's data type is float (either float32 or float64) and its maximum value is less than or equal to 1.0,
+            # it's assumed to be a normalized image with pixel values in the range [0, 1].
+            # In this case, the image is converted to the range [0, 255] by multiplying each pixel value by 255,
+            # and then the data type is converted to uint8.
+            if color_image.dtype in [np.float32, np.float64] and color_image.max() <= 1.0:
+                color_image = (color_image * 255).astype(np.uint8)
+            # If the image's data type is not already uint8, it's converted to uint8.
+            # This handles cases where the image might be in a different integer format (e.g., int16, int32).
+            elif color_image.dtype != np.uint8:
+                color_image = color_image.astype(np.uint8)
+
+            # Convert BGR to grayscale (assuming OpenCV’s BGR format; adjust if RGB)
+            gray_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY)
+
+            # Define the output filename
+            filename = os.path.join(output_folder_path, f"{i:02d}.png")
+
+            # Save the grayscale image
+            success = cv2.imwrite(filename, gray_image)
+            if not success:
+                raise OSError(f"Failed to save image: {filename}")
+
+        print(f"Converted {num_files} RGB/BGR images to grayscale and saved to {output_folder_path}")
+        
     
-    # ================================================ Resizes =================================================
-    def resize_images(self, data: np.ndarray, img_height_resized: int, img_width_resized: int) -> np.ndarray:
-        """
-        Resizes a batch of images to the specified height and width.
-
-        **Args:**
-        - data (np.ndarray): A batch of images as a NumPy array. The shape can be:
-            - [num_images, height, width] for grayscale images.
-            - [num_images, height, width, channels] for colored images.
-        - img_height_resized (int): Target height of the images after resizing.
-        - img_width_resized (int): Target width of the images after resizing.
-
-        **Returns:**
-        - np.ndarray: A NumPy array of resized images with the same number of dimensions as the input.
-
-        **Notes:**
-        - Grayscale images are resized to shape [num_images, img_height_resized, img_width_resized].
-        - Colored images are resized to shape [num_images, img_height_resized, img_width_resized, channels].
-        - The `preserve_range=True` argument ensures that the pixel value range is maintained during resizing.
-
-        **Example:**
-        - obj = ImageProcessor()
-        - resized_images = obj.resize_images(data, img_height_resized=255, img_width_resized=255) 
-        """
-        # Check if the input is grayscale (3D) or colored (4D)
-        if data.ndim == 3:  # Grayscale images (no color channels)
-            # Initialize an array to store resized grayscale images
-            resized_imgs = np.zeros(
-                (data.shape[0], img_height_resized, img_width_resized),
-                dtype=np.uint8  # Use unsigned 8-bit integers for pixel values
-            )
-
-        else:  # Colored images (4D array with channels)
-            img_channels = data.shape[-1]  # Get the number of color channels
-            # Initialize an array to store resized colored images
-            resized_imgs = np.zeros(
-                (data.shape[0], img_height_resized, img_width_resized, img_channels),
-                dtype=np.uint8  # Use unsigned 8-bit integers for pixel values
-            )
-
-        # Loop through each colored image in the batch
-        for i in range(data.shape[0]):
-            # Resize the image to the target dimensions and store it
-            resized_imgs[i] = transform.resize(
-                data[i], (img_height_resized, img_width_resized),
-                preserve_range=True  # Preserve the range of pixel values
-            )
-
-        # Return the resized images
-        return resized_imgs
+    
+  
 
     # ============================================= Augmentation ===============================================
     def augmentation(self, directory_path: str, augmente_path: str, num_augmented_imag: int, rotation_range: int,
                  format_type: str) -> None:
         """
-        Applies image augmentation (rotation) to images in the specified directory and saves them.
+        AppDirs image augmentation (rotation) to images in the specified directory and saves them.
 
         **Args:**
         - directory_path (str): Path to the directory containing the images.
