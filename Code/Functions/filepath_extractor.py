@@ -3,6 +3,7 @@
 
 import os  # Import the os module for interacting with the operating system (e.g., file system traversal)
 from itertools import chain  # Import chain for flattening nested lists
+
 class FilePathExtractor:
     """
     A class for reading and processing files in a directory with a specific format.
@@ -12,14 +13,15 @@ class FilePathExtractor:
         """
         Initialize the FilePathExtractor with a directory path and file format.
         
-        **Parameters:**
+        Args:
         - directory_path: Path to the directory to scan for files.
         - format_type: File format (extension) to filter files, e.g., ".tif".
+                       If not found, raises an error and suggests changing the format.
 
-        **Import module:**
+        Import module:
         - from Functions.filepath_extractor import FilePathExtractor
 
-        **Example:**
+        Example:
         - obj = FilePathExtractor(file_path, "tif")
           1. files_name = obj.filesname           # List of filename in the directory with the specified extension
           2. folders = obj.folders_path           # List of folders path where the files are located
@@ -27,14 +29,30 @@ class FilePathExtractor:
           4. subfoldersname = obj.subfoldersname  # List of subfolders name within the directory
         """
 
+        # Ensure format_type starts with a dot for consistency
+        if not format_type.startswith("."):
+            format_type = "." + format_type
+
         # Initialize class attributes
-        self.files: list[str] = [] # Stores the names of all files matching the specified format.
-        self.full_path: list[str] = [] # Stores the full paths of all matching files.
-        self.folder_path: list[str] = [] # Stores the unique folders path containing the files.
-        self.subfolder: list[list[str]] = [] # Stores the names of subfolders for each directory.
-        self.format_type: str = format_type # Stores the file format to filter (e.g., ".tif").
-        self.directory_path: str = directory_path # Stores the root directory path to scan.
+        self.files: list[str] = []  # Stores the names of all files matching the specified format.
+        self.full_path: list[str] = []  # Stores the full paths of all matching files.
+        self.folder_path: list[str] = []  # Stores the unique folders path containing the files.
+        self.subfolder: list[list[str]] = []  # Stores the names of subfolders for each directory.
+        self.format_type: str = format_type  # Stores the file format to filter (e.g., ".tif").
+        self.directory_path: str = directory_path  # Stores the root directory path to scan.
+
+        # Check if directory exists
+        if not os.path.isdir(directory_path):
+            raise ValueError(f"The directory '{directory_path}' does not exist.")
+
         self._scan_directory()  # Perform the directory scanning process.
+
+        # Check if any files with the specified format were found
+        if not self.files:
+            raise ValueError(
+                f"No files with the format '{format_type}' found in '{directory_path}'. "
+                "Please check the format or directory path and try again."
+            )
 
     def _scan_directory(self) -> None:
         for root, subfolder_name, files_name in os.walk(self.directory_path):  # Traverse the directory tree

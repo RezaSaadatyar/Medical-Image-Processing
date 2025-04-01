@@ -1,44 +1,31 @@
+# ================================ Presented by: Reza Saadatyar (2023-2024) ====================================
+# =================================== E-mail: Reza.Saadatyar@outlook.com =======================================
 import os
 import cv2
-import shutil
-from networkx import is_path
 import numpy as np
 from colorama import Fore
-from platformdirs import AppDirs
-from tensorflow import keras
 from skimage import io, transform, color  # Import scikit-image library
 from Functions.filepath_extractor import FilePathExtractor
-
 class ImageProcessor:
     """
-    A class for processing image data, including resizing.
+    A class for processing image data, including loading, transforming, and augmenting images and masks.
     """
     def __init__(self):
         """
         Initialize the ImageProcessor class.
 
-        **Import module:**
+        Import module:
         - from Functions.image_processor import ImageProcessor
-        
-        **Example:**
-        
-        obj = ImageProcessor()
-        1. Images into ndarray
-           - data = obj.read_images(directory_path, format_type="tif")
-           - print(Fore.GREEN + f"{data.shape = }")
-        2. Masks into binary
-           - masks = obj.masks_to_binary(directory_path, format_type="TIF")
-           - print(Fore.GREEN + f"{masks.shape = }"
-        3. Rgb into gray
-           - img_gray = obj.rgb_to_gray(directory_path, save_path, format_type="tif", save_img_gray="off")
-        4. Resize images
-           - resized_images = obj.resize_images(data, img_height_resized=255, img_width_resized=255)  # Resize all images to 255x255
-           - print(Fore.GREEN + f"Resizing images from {data.shape} to {resized_images.shape}")
-        5. Augmentation
-           - obj.augmentation(file_path, augmente_path, num_augmented_imag, rotation_range, format_type="tif")
-        6. Crop images & masks
-           - cropped_imgs, cropped_masks = obj.crop_images_using_masks(data_path, masks_path, data_format_type, mask_format_type)
+
+        Example:
+        1. Images convert to ndarray (load_images)
+        2. Masks convert to binary or multi-class (load_masks)
+        3. Save grayscale images (save_grayscale_images)
+        4. Generate mask from image (generate_mask_from_image)
+        5. Augmentation (augmentation)
+        6. Crop images based on masks (crop_images_based_on_masks)
         """
+
     # ============================================ Images convert to ndarray ===================================
     def read_images(self, image_path: str, format_type: str, resize: tuple = None, normalize: bool = False, 
                 to_grayscale: bool = False) -> np.ndarray:
@@ -47,7 +34,7 @@ class ImageProcessor:
 
         Args:
         - image_path (str): The path to the directory containing the images.
-        - format_type (str): The file format of the images (e.g., 'jpg', 'png').
+        - format_type (str): The file format of the images (e.g., 'jpg', 'png', 'tif').
         - resize (tuple, optional): Target size as (height, width). Default is None.
         - normalize (bool, optional): Normalize pixel values if max > 1. Default is False.
         - to_grayscale (bool, optional): Convert images to grayscale. Default is False.
@@ -57,9 +44,8 @@ class ImageProcessor:
 
         Example:
         - obj = ImageProcessor()
-        - imgs = obj.read_images(image_path, format_type="tif", resize=(224, 224), 
-                                normalize=False, to_grayscale=False)
-
+        - imgs = obj.read_images(image_path, format_type="tif", resize=(224, 224), normalize=False, to_grayscale=False)
+                                
         Raises:
         - ValueError: If no files are found in the specified directory.
         """
@@ -122,8 +108,8 @@ class ImageProcessor:
         print(Fore.GREEN + f"Image shape: {imgs.shape}")
         
         return imgs
-    
-    # ============================================ Masks convert to binary =====================================
+
+    # ================================= Masks convert to binary or Multi class =================================
     def read_masks(self, mask_path: str, format_type: str = "TIF", resize: tuple = None, 
                     normalize: bool = False) -> np.ndarray:
         """
@@ -144,7 +130,7 @@ class ImageProcessor:
 
         Example:
         - obj = ImageProcessor()
-        - masks = obj.masks_to_format(mask_path, format_type="TIF", resize=(224, 224))
+        - masks = obj.read_masks(mask_path, format_type="TIF", resize=(224, 224), normalize=False)
 
         Raises:
         - ValueError: If no files are found in the specified directory.
@@ -221,9 +207,9 @@ class ImageProcessor:
                     print(Fore.YELLOW + f"  Class {int(cls)}: {count}")
 
         return masks
-      
-    # ============================================== RGB_to_Gray ===============================================
-    def save_grayscale_images(images: np.ndarray, output_path: str, folder_name: str = "Gray image") -> None:
+
+    # ========================================= Save grayscale images ==========================================
+    def save_grayscale_images(self, images: np.ndarray, output_path: str, folder_name: str = "Gray image") -> None:
         """
         Save images as grayscale to a specified directory, converting from RGB/BGR if needed.
 
@@ -234,7 +220,11 @@ class ImageProcessor:
 
         Returns:
         - None: Saves converted images to disk if RGB/BGR, otherwise prints a message.
-
+        
+        Example:
+        - obj = ImageProcessor()
+        - obj.save_grayscale_images(images=images, output_path=output_path, folder_name="Gray image")
+            
         Raises:
         - ValueError: If the input images have an unexpected number of channels (not 1 or 3).
         - OSError: If the output directory cannot be created or accessed, or if saving an image fails.
@@ -288,167 +278,239 @@ class ImageProcessor:
                 raise OSError(f"Failed to save image: {filename}")
 
         print(f"Converted {num_files} RGB/BGR images to grayscale and saved to {output_folder_path}")
+
+    # ======================================= Generate mask from image =========================================
+    def generate_mask_from_image(self, images: np.ndarray, method: str = "otsu", threshold: float = None, 
+                            output_path: str = None, format_type: str = "png") -> np.ndarray:
+        """
+        Generate binary masks from images based on a specified method.
+
+        Args:
+        - images (np.ndarray): Input images array of shape [num_images, height, width, channels].
+        - method (str, optional): Method to generate mask ("otsu", "threshold", "edges"; default: "otsu").
+        - threshold (float, optional): Manual threshold value (0-255) if method="threshold" (default: None).
+        - output_path (str, optional): Path to save masks in 'generated_masks' folder (default: None).
+        - format_type (str, optional): File format for saving masks (default: "png").
+
+        Returns:
+        - np.ndarray: Binary masks array of shape [num_images, height, width, 1], values 0 or 1.
+
+        Notes:
+        - "otsu": Uses Otsu’s thresholding on grayscale image (automatic threshold).
+        - "threshold": Uses a manual threshold value on grayscale image.
+        - "edges": Uses Canny edge detection to create mask.
+        - If output_path is provided, saves masks to `output_path/generated_masks/`.
+
+        Example:
+        - obj = ImageProcessor()
+        - images = obj.load_images("/path/to/images", "jpg")
+        - masks = obj.generate_mask_from_image(images, method="otsu", output_path="/path/to/output")
+        """
+        # Validate images array
+        if not isinstance(images, np.ndarray) or len(images.shape) != 4:
+            raise ValueError("'images' must be a 4D NumPy array (num, h, w, c)")
         
-    
-    
-  
+        num_images, height, width, channels = images.shape
+        if channels not in [1, 3]:
+            raise ValueError(f"Images must have 1 or 3 channels, got {channels}")
+
+        # Validate method
+        valid_methods = ["otsu", "threshold", "edges"]
+        if method not in valid_methods:
+            raise ValueError(f"Method must be one of {valid_methods}, got {method}")
+
+        # If threshold method is used, ensure threshold is provided
+        if method == "threshold" and (threshold is None or not 0 <= threshold <= 255):
+            raise ValueError("For 'threshold' method, provide a threshold value between 0 and 255")
+
+        # Initialize output masks array
+        masks = np.zeros((num_images, height, width, 1), dtype=np.uint8)
+
+        # Set up output directory if provided
+        if output_path:
+            mask_output_path = os.path.join(output_path, "generated_masks")
+            os.makedirs(mask_output_path, exist_ok=True)
+
+        # Process each image
+        for i in range(num_images):
+            img = images[i]
+
+            # Handle float inputs by scaling to [0, 255]
+            if img.dtype in [np.float32, np.float64] and img.max() <= 1.0:
+                img = (img * 255).astype(np.uint8)
+            else:
+                img = img.astype(np.uint8)
+
+            # Convert to grayscale if multi-channel
+            if channels == 3:
+                gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            else:
+                gray_img = img[:, :, 0]  # Already grayscale, drop channel
+
+            # Generate mask based on method
+            if method == "otsu":
+                # Otsu’s thresholding (automatic)
+                _, mask = cv2.threshold(gray_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            elif method == "threshold":
+                # Manual thresholding
+                _, mask = cv2.threshold(gray_img, threshold, 255, cv2.THRESH_BINARY)
+            elif method == "edges":
+                # Canny edge detection
+                mask = cv2.Canny(gray_img, 100, 200)  # Adjustable thresholds
+
+            # Convert to binary (0 and 1) and add channel dimension
+            masks[i, :, :, 0] = (mask > 0).astype(np.uint8)
+
+            # Save mask if output_path is provided
+            if output_path:
+                mask_filename = os.path.join(mask_output_path, f"mask_{i:02d}.{format_type}")
+                cv2.imwrite(mask_filename, mask)
+
+        if output_path:
+            print(f"Generated and saved {num_images} masks to {mask_output_path}")
+        else:
+            print(f"Generated {num_images} masks")
+
+        return masks
 
     # ============================================= Augmentation ===============================================
-    def augmentation(self, directory_path: str, augmente_path: str, num_augmented_imag: int, rotation_range: int,
-                 format_type: str) -> None:
+    def augmentation(self, images: np.ndarray, augmente_path: str, num_augmented_images: int, rotation_range: int, 
+                 format_type: str = "png") -> None:
         """
-        AppDirs image augmentation (rotation) to images in the specified directory and saves them.
+        Apply image augmentation (rotation) to image arrays, saving results to disk.
 
-        **Args:**
-        - directory_path (str): Path to the directory containing the images.
-        - augmente_path (str): Path to the directory to save augmented images.
-        - num_augmented_imag (int): Number of augmented images to generate.
-        - rotation_range (int): Degree range for random image rotation.
-        - format_type (str): File format to filter images (e.g., ".jpg", ".png").
+        Args:
+        - images (np.ndarray): Input images array of shape [num_images, height, width, channels].
+        - augmente_path (str): Base path to create 'augmented' folder with 'images' subfolder.
+        - num_augmented_images (int): Number of augmented images to generate per original image.
+        - rotation_range (int): Degree range for random image rotation (e.g., 30 for [-30, 30]).
+        - format_type (str, optional): File format for saving augmented images (default: "png").
 
-        **Notes:**
-        - A temporary folder is created inside the input directory for processing.
-        - The `ImageDataGenerator` from Keras is used for image augmentation.
-        - Augmented images are saved in a subfolder named 'Rotated' within the `augmente_path`.
+        Notes:
+        - Augmented images are saved in `augmente_path/augmented/images/` with prefix 'aug_'.
+        - Uses OpenCV for rotation.
         
-        **Example:**
+        Example:
         - obj = ImageProcessor()
-        - obj.augmentation(file_path, augmente_path, num_augmented_imag, rotation_range, format_type="tif")
-          - rotation_range = 30
-          - num_augmented_imag = 3
+        - images = obj.load_images("/path/to/images", "jpg")
+        - obj.augmentation(images "/path") 
         """
-        # Create a subfolder for rotated images within the augmented images directory
-        augmente_path = os.path.join(augmente_path, 'Augmented/')
+        # Validate images array
+        if not isinstance(images, np.ndarray) or len(images.shape) != 4:
+            raise ValueError("'images' must be a 4D NumPy array (num, h, w, c)")
+        
+        num_images, height, width, channels = images.shape
+        if channels not in [1, 3]:
+            raise ValueError(f"Images must have 1 or 3 channels, got {channels}")
 
-        # Check if the augmented images folder exists, delete it if so
-        if os.path.exists(augmente_path):
-            shutil.rmtree(augmente_path)  # Delete the folder and its contents
-        os.makedirs(augmente_path, exist_ok=True)  # Recreate the folder
+        # Create output directories: augmented/images
+        img_output_path = os.path.join(augmente_path, "augmented")
+        
+        os.makedirs(img_output_path, exist_ok=True)
 
-        # Create a temporary folder inside the input directory for processing
-        TEMP_DIR = os.path.join(directory_path, 'Temp/')
-        if os.path.exists(TEMP_DIR):
-            shutil.rmtree(TEMP_DIR)  # Delete the temporary folder if it exists
-        os.makedirs(TEMP_DIR, exist_ok=True)  # Recreate the temporary folder
+        # Process each image
+        for i in range(num_images):
+            img = images[i]
 
-        # Create an instance of FilePathExtractor to retrieve file paths
-        obj_path = FilePathExtractor(directory_path, format_type)
+            # Handle float inputs by scaling to [0, 255] for OpenCV
+            if img.dtype in [np.float32, np.float64] and img.max() <= 1.0:
+                img = (img * 255).astype(np.uint8)
+            else:
+                img = img.astype(np.uint8)
 
-        # Get a list of all files path in the specified directory
-        files_path = obj_path.all_files_path
+            # Generate augmented versions of images only
+            for j in range(num_augmented_images):
+                # Random rotation angle within range
+                angle = np.random.uniform(-rotation_range, rotation_range)
+                center = (width // 2, height // 2)
+                rot_matrix = cv2.getRotationMatrix2D(center, angle, scale=1.0)
 
-        # Check if the list of files path is empty
-        if not files_path: raise ValueError("No files found in the specified directory.")
+                # Rotate image only
+                aug_img = cv2.warpAffine(img, rot_matrix, (width, height), 
+                                    flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+                img_filename = os.path.join(img_output_path, f"aug_{i:02d}_{j:02d}.{format_type}")
+                cv2.imwrite(img_filename, aug_img)
 
-        # Get corresponding filesname
-        file_names = obj_path.filesname
+        total_images = num_images * num_augmented_images
+        print(f"Generated and saved {total_images} augmented images to {img_output_path}")
 
-        # Read the first image to determine its dimensions
-        dat = io.imread(files_path[0])
-
-        # Copy all files from the main folder to the temporary folder
-        for ind, val in enumerate(files_path):
-            shutil.copy(val, os.path.join(TEMP_DIR, file_names[ind]))
-
-        # Set up the ImageDataGenerator for image augmentation
-        Data_Gen = keras.preprocessing.image.ImageDataGenerator(rotation_range=rotation_range)
-
-        # Use flow_from_directory to process the images in the Temp folder
-        img_aug = Data_Gen.flow_from_directory(
-            directory_path,              # Parent directory of Temp
-            classes=['Temp'],            # Specify the subfolder 'Temp' as the target
-            batch_size=1,                # ?Process one image at a time
-            save_to_dir=augmente_path,   # Save augmented images to the Rotated folder
-            save_prefix='Aug',           # Prefix for augmented images
-            target_size=(dat.shape[0], dat.shape[1]),  # Resize images to the specified dimensions
-            class_mode=None              # No labels, as we're working with unclassified images
-        )
-
-        # Generate augmented images and save them
-        for _ in range(num_augmented_imag):
-            next(img_aug)  # Process the next image and save it
-
-        # Delete the temporary folder and its contents after processing
-        shutil.rmtree(TEMP_DIR)
-    
-    # ======================================= Mask-Based Image Cropping ========================================
-    def mask_based_image_cropping(self, data_path: str, masks_path: str, data_format_type: str, mask_format_type: str) -> np.ndarray:
+    # ======================================= Crop images based on masks =======================================
+    def crop_images_based_on_masks(self, images: np.ndarray, masks: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
-        Crop images and their corresponding masks based on the mask boundaries.
+        Crop images and their corresponding masks based on mask boundaries, using array inputs.
 
-        **Args:**
-        - data_path (str): Path to the directory containing the images.
-        - masks_path (str): Path to the directory containing the masks.
-        - data_format_type (str): File format of the images (e.g., ".jpg", ".png").
-        - mask_format_type (str): File format of the masks (e.g., ".png", ".tif").
+        Args:
+        - images (np.ndarray): Input images array of shape [num_images, height, width, channels].
+        - masks (np.ndarray): Input masks array of shape [num_images, height, width, 1].
 
-        **Returns:**
-        - tuple[np.ndarray, np.ndarray]: A tuple containing two NumPy arrays:
+        Returns:
+        - tuple[np.ndarray, np.ndarray]: 
             - cropped_imgs: Array of cropped images with shape [num_images, height, width, channels].
-            - cropped_masks: Array of cropped masks with shape [num_images, height, width].
+            - cropped_masks: Array of cropped masks with shape [num_images, height, width, 1].
 
-        **Notes:**
-        - The masks are expected to be binary (0 for background, 255 for foreground).
-        - The images and masks are resized back to their original dimensions after cropping.
-        
-        **Example:**
+        Example:
         - obj = ImageProcessor()
-        - cropped_imgs, cropped_masks = obj.crop_images_using_masks(data_path, masks_path, data_format_type, mask_format_type)
+        - images = obj.load_images("/path/to/images", "jpg")
+        - masks = obj.load_masks(masks_path, "tif")
+        - cropped_imgs, cropped_masks = obj.mask_based_image_cropping(images, masks)
+
+        Raises:
+        - ValueError: If image and mask counts or dimensions don’t match, or if mask has no foreground.
         """
-        # Create an instance of FilePathExtractor for images and masks
-        obj_data = FilePathExtractor(data_path, format_type=data_format_type)
-        obj_masks = FilePathExtractor(masks_path, format_type=mask_format_type)
-
-        # Get filenames and file paths for images and masks
-        data_filesname = obj_data.filesname
-        data_filespath = obj_data.all_files_path
-        masks_filespath = obj_masks.all_files_path
-
-        # Read the first image to determine its shape
-        first_img_shape = io.imread(data_filespath[0]).shape
-
-        # Initialize an array to store cropped images
-        cropped_imgs = np.zeros((len(data_filesname), *first_img_shape), dtype=np.uint8)
-
-        # Read the first mask to determine its shape
-        first_mask_shape = io.imread(masks_filespath[0]).shape
-
-        # Initialize an array to store cropped masks
-        cropped_masks = np.zeros((len(masks_filespath), *first_mask_shape), dtype=bool)
-
-        # Loop through each image and its corresponding mask
-        for ind, val in enumerate(data_filespath):
-            # Read the image and mask
-            img = io.imread(val)
-            mask = io.imread(masks_filespath[ind])
-
-            # Find the coordinates of the mask's foreground (where mask == 255)
-            y_coord, x_coord = np.where(mask == 255)
-
-            # Calculate the bounding box for cropping
-            y_min = min(y_coord)
-            y_max = max(y_coord)
-            x_min = min(x_coord)
-            x_max = max(x_coord)
-
-            # Crop and resize the image to the original dimensions
-            cropped_imgs[ind] = transform.resize(
-                img[y_min:y_max, x_min:x_max],
-                first_img_shape,
-                mode='constant',
-                anti_aliasing=True,
-                preserve_range=True
-            )
-
-            # Crop and resize the mask to the original dimensions
-            cropped_masks[ind] = transform.resize(
-                mask[y_min:y_max, x_min:x_max],
-                first_mask_shape,
-                mode='constant',
-                anti_aliasing=True,
-                preserve_range=True
-            )
-
-        # Return the cropped images and masks
-        return cropped_imgs, cropped_masks
+        # Validate input arrays
+        if not isinstance(images, np.ndarray) or not isinstance(masks, np.ndarray):
+            raise ValueError("Both 'images' and 'masks' must be NumPy arrays")
         
+        if len(images.shape) != 4 or len(masks.shape) != 4:
+            raise ValueError("Images must be 4D (num, h, w, c) and masks must be 4D (num, h, w, 1)")
+
+        num_images, orig_height, orig_width, channels = images.shape
+        num_masks, mask_height, mask_width, mask_channels = masks.shape
+
+        # Check compatibility
+        if num_images != num_masks:
+            raise ValueError(f"Number of images ({num_images}) does not match number of masks ({num_masks})")
+        if (orig_height, orig_width) != (mask_height, mask_width):
+            raise ValueError(f"Image dimensions {orig_height}x{orig_width} do not match mask dimensions {mask_height}x{mask_width}")
+        if mask_channels != 1:
+            raise ValueError(f"Masks must have 1 channel, got {mask_channels}")
+        if channels not in [1, 3]:
+            raise ValueError(f"Images must have 1 or 3 channels, got {channels}")
+
+        # Initialize output arrays
+        cropped_imgs_list = []
+        cropped_masks_list = []
+
+        # Process each image-mask pair
+        for i in range(num_images):
+            img = images[i]  # Shape: (h, w, c)
+            mask = masks[i, :, :, 0]  # Shape: (h, w), drop channel dim
+
+            # Handle float inputs (e.g., normalized [0, 1]) by scaling to [0, 255] for processing
+            if mask.dtype in [np.float32, np.float64] and mask.max() <= 1.0:
+                mask_uint8 = (mask * 255).astype(np.uint8)
+            else:
+                mask_uint8 = mask.astype(np.uint8)
+
+            # Find bounding box of non-zero (foreground) regions in the mask
+            y_coord, x_coord = np.where(mask_uint8 > 0)
+            if len(y_coord) == 0 or len(x_coord) == 0:
+                raise ValueError(f"Mask {i} has no foreground (all zeros)")
+
+            y_min, y_max = min(y_coord), max(y_coord) + 1  # +1 to include max pixel
+            x_min, x_max = min(x_coord), max(x_coord) + 1
+
+            # Crop image and mask
+            cropped_img = img[y_min:y_max, x_min:x_max, :]
+            cropped_mask = mask[y_min:y_max, x_min:x_max]
+
+            # Store without resizing
+            cropped_imgs_list.append(cropped_img)
+            cropped_masks_list.append(np.expand_dims(cropped_mask, axis=-1))
+
+        # Convert lists to arrays (assuming uniform crop sizes; adjust if needed)
+        cropped_imgs = np.stack(cropped_imgs_list, axis=0)
+        cropped_masks = np.stack(cropped_masks_list, axis=0)
+
+        print(f"Cropped {num_images} image-mask pairs. Output shapes: {cropped_imgs.shape}, {cropped_masks.shape}")
+        return cropped_imgs, cropped_masks
