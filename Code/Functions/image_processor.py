@@ -1,4 +1,4 @@
-# ================================ Presented by: Reza Saadatyar (2023-2024) ====================================
+# ================================ Presented by: Reza Saadatyar (2024-2025) ====================================
 # =================================== E-mail: Reza.Saadatyar@outlook.com =======================================
 import os
 import cv2
@@ -18,12 +18,23 @@ class ImageProcessor:
         - from Functions.image_processor import ImageProcessor
 
         Example:
+        - obj = ImageProcessor()
         1. Images convert to ndarray (load_images)
+           - imgs = obj.read_images(image_path, format_type="tif", resize=(224, 224), normalize=False, to_grayscale=False)
         2. Masks convert to binary or multi-class (load_masks)
+           - masks = obj.read_masks(mask_path, format_type="tif", resize=(224, 224), normalize=False, to_grayscale=False)
         3. Save grayscale images (save_grayscale_images)
+           - obj.save_grayscale_images(images=images, output_path=output_path, folder_name="Gray image")
         4. Generate mask from image (generate_mask_from_image)
+           - images = obj.load_images("/path/to/images", "jpg")
+           - masks = obj.generate_mask_from_image(images, method="otsu", output_path="/path/to/output")
         5. Augmentation (augmentation)
+           - images = obj.load_images("/path/to/images", "jpg")
+           - obj.augmentation(images "/path") 
         6. Crop images based on masks (crop_images_based_on_masks)
+           - images = obj.load_images("/path/to/images", "jpg")
+           - masks = obj.load_masks(masks_path, "tif")
+           - cropped_imgs, cropped_masks = obj.mask_based_image_cropping(images, masks, resize=(256, 256))
         """
 
     # ============================================ Images convert to ndarray ===================================
@@ -435,13 +446,14 @@ class ImageProcessor:
         print(f"Generated and saved {total_images} augmented images to {img_output_path}")
 
     # ======================================= Crop images based on masks =======================================
-    def crop_images_based_on_masks(self, images: np.ndarray, masks: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def crop_images_based_on_masks(self, images: np.ndarray, masks: np.ndarray, resize: tuple = None) -> tuple[np.ndarray, np.ndarray]:
         """
         Crop images and their corresponding masks based on mask boundaries, using array inputs.
 
         Args:
         - images (np.ndarray): Input images array of shape [num_images, height, width, channels].
         - masks (np.ndarray): Input masks array of shape [num_images, height, width, 1].
+        - resize (tuple, optional): Target size (height, width) for resizing cropped images and masks. Defaults to None.
 
         Returns:
         - tuple[np.ndarray, np.ndarray]: 
@@ -452,7 +464,7 @@ class ImageProcessor:
         - obj = ImageProcessor()
         - images = obj.load_images("/path/to/images", "jpg")
         - masks = obj.load_masks(masks_path, "tif")
-        - cropped_imgs, cropped_masks = obj.mask_based_image_cropping(images, masks)
+        - cropped_imgs, cropped_masks = obj.mask_based_image_cropping(images, masks, resize=(128, 128))
 
         Raises:
         - ValueError: If image and mask counts or dimensions don’t match, or if mask has no foreground.
@@ -504,6 +516,10 @@ class ImageProcessor:
             cropped_img = img[y_min:y_max, x_min:x_max, :]
             cropped_mask = mask[y_min:y_max, x_min:x_max]
 
+            if resize is not None:
+                cropped_img = cv2.resize(cropped_img, resize[::-1], interpolation=cv2.INTER_AREA)
+                cropped_mask = cv2.resize(cropped_mask, resize[::-1], interpolation=cv2.INTER_NEAREST)
+
             # Store without resizing
             cropped_imgs_list.append(cropped_img)
             cropped_masks_list.append(np.expand_dims(cropped_mask, axis=-1))
@@ -512,5 +528,5 @@ class ImageProcessor:
         cropped_imgs = np.stack(cropped_imgs_list, axis=0)
         cropped_masks = np.stack(cropped_masks_list, axis=0)
 
-        print(f"Cropped {num_images} image-mask pairs. Output shapes: {cropped_imgs.shape}, {cropped_masks.shape}")
+        print(f"Cropped {num_images} image-mask pairs. Image shape: {cropped_imgs.shape}, Mask shape: {cropped_masks.shape}")
         return cropped_imgs, cropped_masks
