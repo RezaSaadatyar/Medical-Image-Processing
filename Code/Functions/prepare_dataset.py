@@ -9,7 +9,7 @@ def prepare_dataset(
     labels: Union[np.ndarray, tf.Tensor], 
     train_size: float = 0.7,  
     valid_size: float = 0.15, 
-    batch_size: int = 8,  
+    batch_size: int = 8,
     shuffle_train: bool = True, 
     shuffle_buffer_size: int = 1000
 ) -> Tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
@@ -70,7 +70,7 @@ def prepare_dataset(
         random_state=24,  # Same seed for consistency
         # stratify=y_train_val if len(set(y_train_val)) > 1 else None
     )
-    
+
     # ======================================= DATASET CREATION =================================================
     # Create TensorFlow Dataset objects with proper type casting
     train_dataset = tf.data.Dataset.from_tensor_slices(
@@ -84,7 +84,7 @@ def prepare_dataset(
     test_dataset = tf.data.Dataset.from_tensor_slices(
         (tf.cast(x_test, tf.float32), tf.cast(y_test, tf.float32))
     )
-    
+
     # ====================================== DATASET OPTIMIZATION ==============================================
     # Shuffle training data if enabled (recommended for better training)
     if shuffle_train:
@@ -92,7 +92,7 @@ def prepare_dataset(
             buffer_size=min(shuffle_buffer_size, len(x_train)),  # Don't exceed dataset size
             reshuffle_each_iteration=True  # Important for proper epoch training
         )
-    
+
     # Batch all datasets for efficient processing
     train_dataset = train_dataset.batch(batch_size)
     valid_dataset = valid_dataset.batch(batch_size)
@@ -111,5 +111,5 @@ def prepare_dataset(
     print(f"Training shuffle: {'enabled' if shuffle_train else 'disabled'}")
     print("\t")
     pprint.pprint(train_dataset.element_spec, width=80)
-    
+
     return train_dataset, valid_dataset, test_dataset
