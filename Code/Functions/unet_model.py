@@ -1,3 +1,5 @@
+# ================================ Presented by: Reza Saadatyar (2024-2025) ====================================
+# =================================== E-mail: Reza.Saadatyar@outlook.com =======================================
 
 from tensorflow.keras.layers import Input, Lambda, Conv2D, MaxPooling2D, Dropout, BatchNormalization
 from tensorflow.keras.layers import Activation, concatenate, Conv2DTranspose
@@ -42,9 +44,9 @@ def unet_model(
     # Lambda layer to check max value and normalize only if > 1
     def normalize_inputs(x):
         max_val = tf.reduce_max(x)
-        return x / 255.0 if max_val > 1 else x
-    
-    inputs = Lambda(normalize_inputs)(inputs)
+        return tf.cond(tf.greater(max_val, 1.0), lambda: x / 255.0, lambda: x)
+
+    inputs = Lambda(normalize_inputs, output_shape=(img_height, img_width, img_channels))(inputs)
 
     # ======================================= ENCODER (Contracting Path) =======================================
     # Block 1 (Shallow: Lowest Dropout)
