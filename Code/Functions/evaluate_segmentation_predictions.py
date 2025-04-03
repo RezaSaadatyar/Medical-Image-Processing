@@ -4,6 +4,8 @@
 import numpy as np
 import tensorflow as tf 
 
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+
 def evaluate_segmentation_predictions(test_dataset, predictions, num_sample=3):
     """
     Evaluate model predictions by calculating IoU and Dice coefficient for a batch of test images.
@@ -76,5 +78,9 @@ def evaluate_segmentation_predictions(test_dataset, predictions, num_sample=3):
     # Calculate IoU and Dice for each sample in the batch
     for i in range(num_sample):
         iou_score = iou(test_masks[i], predictions[i])
+        acc = accuracy_score(test_masks[i].flatten(), predictions[i].flatten())
         dice_score = dice_coef(test_masks[i], predictions[i])
-        print(f"Sample {i+1} IoU: {iou_score:.3f}; Dice: {dice_score:.3f}")
+        rec = recall_score(test_masks[i].flatten(), predictions[i].flatten(), labels=[0, 1], average="binary")
+        pre = precision_score(test_masks[i].flatten(), predictions[i].flatten(), labels=[0, 1], average="binary")
+        
+        print(f"Sample {i+1} Accuracy: {acc:.3f}; IoU: {iou_score:.3f}; Dice coef: {dice_score:.3f}; Recall: {rec:.3f}; Precision: {pre:.3f}")
