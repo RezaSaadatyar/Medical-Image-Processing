@@ -3,7 +3,7 @@
 
 import matplotlib.pyplot as plt
 
-def plot_training_history(history):
+def plot_training_history(history, figsize=(6, 2.5)):
     """
     Plot training and validation metrics/loss over epochs based on available metrics in history.
     
@@ -63,7 +63,7 @@ def plot_training_history(history):
     n_rows = (n_metrics + 1) // 2  # Ceiling division to determine rows
     n_cols = min(n_metrics, 2)     # Max 2 columns
     
-    plt.figure(figsize=(8, 1.8 * n_rows))  # Adjust height based on number of rows
+    plt.figure(figsize=figsize)  # Adjust height based on number of rows
     
     for i, metric in enumerate(metrics_to_plot, 1):
         plt.subplot(n_rows, n_cols, i)

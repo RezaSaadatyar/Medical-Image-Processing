@@ -146,3 +146,45 @@ def unet_model(
 
     model = Model(inputs=inputs, outputs=c10)
     return model
+
+
+# def conv_block(input, num_filters, kernel_size=(3, 3), activation='relu'):
+#     conv = Conv2D(num_filters, kernel_size=kernel_size, kernel_initializer='he_normal', padding='same')(input)
+#     conv = Activation(activation)(conv)
+    
+#     conv = Dropout(0.1)(conv)
+    
+#     conv = Conv2D(num_filters, kernel_size=kernel_size, kernel_initializer='he_normal', padding='same')(conv)
+#     conv = Activation(activation)(conv)
+    
+#     return conv
+
+# def encoder_block(input, num_filters, pool_size=(2, 2)):
+#     conv = conv_block(input, num_filters)
+#     pool = MaxPooling2D(pool_size)(conv)
+    
+#     return conv, pool
+
+# def decoder_block(input, skip_features, num_filters, kernel_size=(2, 2), strides=(2, 2)):
+#     up = Conv2DTranspose(num_filters, kernel_size=kernel_size, strides=strides, padding='same')(input)
+#     concat = concatenate([skip_features, up], axis=3)
+#     d = conv_block(concat, num_filters)
+#     return d
+
+# inputs = Input((img_height, img_width, img_channels))
+# inputs = Lambda(lambda x: x / 255.0)(inputs)
+
+# s1, p1 = encoder_block(inputs, 16)
+# s2, p2 = encoder_block(p1, 32)
+# s3, p3 = encoder_block(p2, 64)
+# s4, p4 = encoder_block(p3, 128)
+
+# b1 = conv_block(p4, 256)
+
+# d1 = decoder_block(b1, s4, 128)
+# d2 = decoder_block(d1, s3, 64)
+# d3 = decoder_block(d2, s1, 32)
+# d4 = decoder_block(d3, s1, 16)
+
+
+# outputs = Conv2D(1, kernel_size=(1, 1), activation='sigmoid')(d4)

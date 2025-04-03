@@ -11,6 +11,9 @@ class ShowImageTrainingProgress(keras.callbacks.Callback):
     """
     Custom callback to display input image, ground truth mask, and predicted mask for a specific sample at the 
     beginning of the first epoch and end of the last epoch.
+    
+    Example:
+    - callbacks = [ShowImageTrainingProgress(train_dataset, sample_idx=0)]
     """
     
     def __init__(self, dataset, sample_idx=0):
