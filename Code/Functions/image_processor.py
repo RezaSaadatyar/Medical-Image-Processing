@@ -212,9 +212,6 @@ class ImageProcessor:
         unique_classes, class_counts = np.unique(masks, return_counts=True)
         detected_num_classes = len(unique_classes)
 
-        # Print mask type and class information
-        print(f"Detected mask type: {'Binary' if force_binary else 'Multi-class'} "
-            f"based on num_classes={num_classes} and unique values in masks")
         print(Fore.GREEN + f"{masks.shape = }")
         print(Fore.YELLOW + f"Total number of classes in masks: {detected_num_classes}")
 
