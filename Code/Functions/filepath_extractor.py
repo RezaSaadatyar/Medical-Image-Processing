@@ -1,8 +1,9 @@
 # ================================ Presented by: Reza Saadatyar (2023-2024) ====================================
 # =================================== E-mail: Reza.Saadatyar@outlook.com =======================================
 
-import os  # Import the os module for interacting with the operating system (e.g., file system traversal)
-from itertools import chain  # Import chain for flattening nested lists
+import os
+from itertools import chain
+import re
 
 class FilePathExtractor:
     """
@@ -15,7 +16,7 @@ class FilePathExtractor:
         
         Args:
         - directory_path: Path to the directory to scan for files.
-        - format_type: File format (extension) to filter files, e.g., ".tif".
+        - format_type: File format (extension) to filter files, e.g., ".tif, png, jpg, ect".
                        If not found, raises an error and suggests changing the format.
 
         Import module:
@@ -55,6 +56,9 @@ class FilePathExtractor:
             )
 
     def _scan_directory(self) -> None:
+        """
+        Scan the directory and its subdirectories to collect files, paths, and subfolder names.
+        """
         for root, subfolder_name, files_name in os.walk(self.directory_path):  # Traverse the directory tree
             root = root.replace("\\", "/")  # Replace backslashes with forward slashes for cross-platform compatibility
 
@@ -68,41 +72,60 @@ class FilePathExtractor:
                     self.full_path.append(os.path.join(root, file).replace("\\", "/"))  # Append the full file path
 
                     # Ensure subfolder names are unique and non-empty
-                    if subfolder_name not in self.subfolder and subfolder_name != []:
+                    if subfolder_name and subfolder_name not in self.subfolder:
                         self.subfolder.append(subfolder_name)  # Append subfolder names to subfolders list
+
+    def _natural_sort_key(self, s: str) -> list:
+        """
+        Generate a key for natural sorting by splitting strings into numeric and non-numeric parts.
+        
+        Args:
+        - s: String to generate sort key for.
+        
+        Returns:
+        - List of parts where numbers are converted to integers for proper numerical sorting.
+        """
+        # Split the string into parts: non-digits and digits
+        parts = re.split(r'(\d+)', s)
+        # Convert numeric parts to integers, keep non-numeric parts as strings
+        return [int(part) if part.isdigit() else part.lower() for part in parts]
 
     @property
     def all_files_path(self) -> list[str]:
         """
-        Retrieve all full files path for files with the specified format.
+        Retrieve all full files path for files with the specified format, sorted naturally.
 
-        **return:** List of full files path.
+        Returns:
+        - List of full files path.
         """
-        return sorted(self.full_path)
+        return sorted(self.full_path, key=self._natural_sort_key)
 
     @property
     def filesname(self) -> list[str]:
         """
-        Retrieve the list of filesname.
+        Retrieve the list of filenames, sorted naturally.
 
-        **return:** List of filesname.
+        Returns:
+        - List of filenames.
         """
-        return sorted(self.files)
+        return sorted(self.files, key=self._natural_sort_key)
 
     @property
     def folders_path(self) -> list[str]:
         """
-        Retrieve the list of folders path containing the files.
+        Retrieve the list of folders path containing the files, sorted naturally.
 
-        **return:** List of folders path.
+        Returns:
+        - List of folders path.
         """
-        return sorted(self.folder_path)
+        return sorted(self.folder_path, key=self._natural_sort_key)
 
     @property
     def subfoldersname(self) -> list[str]:
         """
-        Retrieve a flattened list of subfolders name.
+        Retrieve a flattened list of subfolders name, sorted naturally.
 
-        **return:** Flattened list of subfolders name.
+        Returns:
+        - Flattened list of subfolders name.
         """
-        return sorted(list(chain.from_iterable(self.subfolder)))
+        return sorted(list(chain.from_iterable(self.subfolder)), key=self._natural_sort_key)

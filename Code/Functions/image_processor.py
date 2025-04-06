@@ -6,6 +6,7 @@ import numpy as np
 from colorama import Fore
 from skimage import io, transform, color  # Import scikit-image library
 from Functions.filepath_extractor import FilePathExtractor
+
 class ImageProcessor:
     """
     A class for processing image data, including loading, transforming, and augmenting images and masks.
@@ -98,7 +99,7 @@ class ImageProcessor:
             # Read image
             img = io.imread(file_path)
             # img = cv2.imread(file_path)
-            
+
             # Convert to grayscale if specified
             if to_grayscale and img.ndim == 3: img = color.rgb2gray(img)
             # if to_grayscale: img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -121,22 +122,23 @@ class ImageProcessor:
         return imgs
 
     # ================================= Masks convert to binary or Multi class =================================
-    def read_masks(self, mask_path: str, format_type: str = "TIF", resize: tuple = None, 
-                    normalize: bool = False) -> np.ndarray:
+    def read_masks(self, mask_path: str, format_type: str = "TIF", resize: tuple = None, normalize: bool = False, 
+                num_classes: int = None) -> np.ndarray:
         """
-        Convert mask images from a specified directory into a binary or multi-class NumPy array 
-        based on the mask type, using OpenCV, and count the number of classes.
+        Convert mask images from a specified directory into a binary or multi-class NumPy array based on the mask
+        type, using OpenCV, and count the number of classes.
 
         Args:
         - mask_path (str): The path to the directory containing the mask images.
         - format_type (str, optional): The file format of the mask images (default is "TIF").
         - resize (tuple, optional): Target size as (height, width). Default is None.
         - normalize (bool, optional): Normalize pixel values to [0, 1] if max > 1. Default is False.
+        - num_classes (int, optional): Expected number of classes. If 2, forces binary conversion.
 
         Returns:
         - numpy.ndarray: A NumPy array of shape [num_files, height, width, 1], where:
-            - Binary: 0 (background), 1 (foreground) if mask has 2 unique values.
-            - Multi-class: Integer labels (e.g., 0, 1, 2, ...) if mask has >2 unique values.
+            - Binary: 0 (background), 255 or 1 (foreground) if num_classes=2 or mask has 2 unique values.
+            - Multi-class: Integer labels (e.g., 0, 1, 2, ...) if num_classes>2.
             - Normalized to [0, 1] if normalize=True.
 
         Example:
@@ -150,19 +152,16 @@ class ImageProcessor:
         obj_path = FilePathExtractor(mask_path, format_type)
         files_path = obj_path.all_files_path
 
-        if not files_path: raise ValueError("No files found in the specified directory.")
+        if not files_path:
+            raise ValueError("No files found in the specified directory.")
 
         num_files = len(files_path)
-        # Read the first mask to determine dimensions and initial type
+        # Read the first mask to determine dimensions
         mask = cv2.imread(files_path[0], cv2.IMREAD_GRAYSCALE)
 
         # Set target dimensions
         img_height, img_width = resize if resize else mask.shape[:2]
-
-        # Determine if the mask is binary or multi-class based on unique values in first mask
-        unique_values = np.unique(mask)
-        is_binary = len(unique_values) <= 2  # Binary if 2 or fewer unique values
-
+        
         # Initialize array; use float32 if normalizing, uint8 otherwise
         masks = np.zeros((num_files, img_height, img_width, 1),
                         dtype=np.float32 if normalize else np.uint8)
@@ -172,43 +171,59 @@ class ImageProcessor:
             # Read mask in grayscale mode
             mask = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
 
+            # Check unique values in the current mask
+            unique_values = np.unique(mask)
+            
+            # Determine if we should force binary conversion
+            force_binary = (num_classes == 2) or (len(unique_values) <= 2)
+
             # Handle binary or multi-class conversion
-            if is_binary:
-                # Convert to binary (0 and 1)
-                mask = (mask > 0).astype(np.uint8)
+            if force_binary:
+                # Convert to binary: 0 remains 0, all non-zero values become 255 (or 1 if normalized)
+                if len(unique_values) > 2 and num_classes == 2:
+                    mask = np.where(mask > 0, 255, 0).astype(np.uint8)  # Non-zero to 255, zero stays 0
+                else:
+                    # For masks that are already binary-like, ensure 0 and 255
+                    mask = np.where(mask > 0, 255, 0).astype(np.uint8)
             else:
                 # Preserve multi-class labels (no thresholding)
                 mask = mask.astype(np.uint8)  # Ensure uint8 unless normalized
 
-            # Normalize if specified and max value exceeds 1
-            if normalize and mask.max() > 1:  mask = mask / mask.max()  # Scale to [0, 1] based on max value
+            # Normalize if specified
+            if normalize:
+                if mask.max() > 1:
+                    mask = (mask / 255.0).astype(np.float32)  # Scale to [0, 1] (0 stays 0, 255 becomes 1)
+                else:
+                    mask = mask.astype(np.float32)  # Already in [0, 1] range
 
             # Resize if specified
             if resize:
                 mask = cv2.resize(mask, (img_width, img_height), 
                                 interpolation=cv2.INTER_NEAREST)  # Preserve discrete values
-                if is_binary:
-                    mask = (mask > 0).astype(np.uint8)  # Re-binarize after resizing
+                if force_binary and not normalize:
+                    mask = np.where(mask > 0, 255, 0).astype(np.uint8)  # Re-binarize after resizing to 0 and 255
+                elif force_binary and normalize:
+                    mask = np.where(mask > 0, 1.0, 0.0).astype(np.float32)  # Re-binarize to 0 and 1 if normalized
 
             # Add channel dimension and store
             masks[ind] = np.expand_dims(mask, axis=-1)
 
         # Analyze the final masks array for class counts
         unique_classes, class_counts = np.unique(masks, return_counts=True)
-        num_classes = len(unique_classes)
+        detected_num_classes = len(unique_classes)
 
         # Print mask type and class information
-        print(f"Detected mask type: {'Binary' if is_binary else 'Multi-class'} "
-            f"based on first mask with {len(unique_values)} unique values")
+        print(f"Detected mask type: {'Binary' if force_binary else 'Multi-class'} "
+            f"based on num_classes={num_classes} and unique values in masks")
         print(Fore.GREEN + f"{masks.shape = }")
-        print(Fore.YELLOW + f"Total number of classes in masks: {num_classes}")
+        print(Fore.YELLOW + f"Total number of classes in masks: {detected_num_classes}")
 
         # Detailed class counts
-        if is_binary and not normalize:
-            ones_count = np.sum(masks == 1)
-            zeros_count = np.sum(masks == 0)
-            print(Fore.YELLOW + f"Number of 1s (foreground): {ones_count}")
-            print(Fore.YELLOW + f"Number of 0s (background): {zeros_count}")
+        if force_binary and not normalize:
+            foreground_count = np.sum(masks == 1.0) if force_binary and normalize else np.sum(masks == 255)
+            background_count = np.sum(masks == 0)
+            print(Fore.YELLOW + f"Number of 1s or 255s (foreground): {foreground_count}")
+            print(Fore.YELLOW + f"Number of 0s (background): {background_count}")
         else:
             print(Fore.YELLOW + "Class counts in masks:")
             for cls, count in zip(unique_classes, class_counts):
