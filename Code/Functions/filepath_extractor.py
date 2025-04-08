@@ -2,8 +2,8 @@
 # =================================== E-mail: Reza.Saadatyar@outlook.com =======================================
 
 import os
-from itertools import chain
 import re
+from itertools import chain
 
 class FilePathExtractor:
     """
