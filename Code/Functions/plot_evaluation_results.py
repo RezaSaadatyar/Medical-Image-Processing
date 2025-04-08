@@ -4,7 +4,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_evaluation_results(results):
+def plot_evaluation_results(results, figsize=(4, 4)):
     """
     Plot test set evaluation results as a bar chart based on available metrics in results.
     
@@ -18,7 +18,7 @@ def plot_evaluation_results(results):
     if not metrics_to_plot: raise ValueError("No metrics found in results to plot.")
     
     # Create bar plot with dynamic width and assigned colors
-    plt.figure(figsize=(max(4, len(metrics_to_plot) * 0.8), 3))
+    plt.figure(figsize=figsize)
     
     # Get corresponding values
     values = [results[metric] for metric in metrics_to_plot]
