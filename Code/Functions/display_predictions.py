@@ -1,7 +1,7 @@
 # ================================ Presented by: Reza Saadatyar (2024-2025) ====================================
 # =================================== E-mail: Reza.Saadatyar@outlook.com =======================================
 
-from matplotlib.pyplot import plt
+import matplotlib.pyplot as plt
 
 def display_predictions(test_images, test_masks, predictions, indx=0, figsize=(6, 4)):
     plt.figure(figsize=figsize)
