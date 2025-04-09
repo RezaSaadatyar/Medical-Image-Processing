@@ -38,7 +38,7 @@ def segmentation_metrics(alpha: float = 0.5):
     # Small constant to prevent division by zero and ensure numerical stability
     smooth = 1e-15
     
-    @tf.function
+    @tf.function(reduce_retracing=True)
     def dice_coef(y_true, y_pred):
         """
         Computes the Dice coefficient (F1 score) between ground truth and predicted masks.
@@ -65,7 +65,7 @@ def segmentation_metrics(alpha: float = 0.5):
         # Calculate Dice coefficient with smoothing factor
         return (2. * intersection + smooth) / (union + smooth)
 
-    @tf.function
+    @tf.function(reduce_retracing=True)
     def dice_coef_loss(y_true, y_pred):
         """
         Computes Dice loss as 1 - Dice coefficient.
@@ -83,7 +83,7 @@ def segmentation_metrics(alpha: float = 0.5):
         """
         return 1.0 - dice_coef(y_true, y_pred)
 
-    @tf.function
+    @tf.function(reduce_retracing=True)
     def iou(y_true, y_pred):
         """
         Computes Intersection over Union (IoU/Jaccard index) between masks.
@@ -112,7 +112,7 @@ def segmentation_metrics(alpha: float = 0.5):
         # Calculate IoU with smoothing factor
         return (intersection + smooth) / (union + smooth)
 
-    @tf.function
+    @tf.function(reduce_retracing=True)
     def iou_coef_loss(y_true, y_pred):
         """
         Computes IoU loss as 1 - IoU.
@@ -130,7 +130,7 @@ def segmentation_metrics(alpha: float = 0.5):
         """
         return 1.0 - iou(y_true, y_pred)
 
-    @tf.function
+    @tf.function(reduce_retracing=True)
     def combined_loss(y_true, y_pred):
         """
         Computes a combined loss of binary crossentropy and Dice loss.
