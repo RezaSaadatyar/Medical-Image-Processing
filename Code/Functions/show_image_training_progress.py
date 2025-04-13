@@ -5,110 +5,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
-
-def show_image_training_progress(dataset, model, sample_idx=0, figsize=(8, 3.5)):
-    """
-    Create a callback function to display input image, ground truth mask, predicted mask for Epoch 1,
-    and predicted mask when training stops in a single row with four subplots.
-
-    Args:
-        dataset: tf.data.Dataset object containing (image, mask) pairs
-        model: The Keras model being trained (used for predictions)
-        sample_idx: Index of the sample to display from the dataset (default: 0)
-
-    Returns:
-        A Keras LambdaCallback to be used during training.
-    """
-    # Dictionary to store data for Epoch 1
-    epoch_1_data = {'img': None, 'mask': None, 'pred': None}
-    # Variable to track the last epoch
-    last_epoch = 0
-
-    def on_epoch_end(epoch, logs=None):
-        """Process images at the end of the first epoch and track epochs."""
-        nonlocal last_epoch
-        last_epoch = epoch + 1  # Update last_epoch (epoch is 0-based, so +1 for display)
-        # Store data only for Epoch 1
-        if epoch == 0:
-            for batch in dataset.take(1):
-                images, masks = batch
-                img = images[sample_idx].numpy()
-                mask = masks[sample_idx].numpy()
-                pred = model.predict(np.expand_dims(img, axis=0), verbose=0)[0]
-
-                # Handle the predicted mask based on model output
-                if pred.shape[-1] == 1:  # Sigmoid output (binary segmentation)
-                    pred = (pred - pred.min()) / (pred.max() - pred.min() + 1e-8)  # Normalize to [0, 1]
-                    pred = (pred > 0.5).astype(np.float32)  # Threshold to binary
-                else:  # Softmax output (multi-class segmentation)
-                    pred = np.argmax(pred, axis=-1).astype(np.float32)
-                    if pred.max() > 0:
-                        pred = pred / pred.max()
-
-                epoch_1_data['img'] = img
-                epoch_1_data['mask'] = mask
-                epoch_1_data['pred'] = pred
-
-    def on_train_end(logs=None):
-        """Display images when training stops."""
-        # Get a batch from the dataset for the final prediction
-        for batch in dataset.take(1):
-            images, masks = batch
-            img = images[sample_idx].numpy()
-            pred = model.predict(np.expand_dims(img, axis=0), verbose=0)[0]
-
-            # Handle the predicted mask based on model output
-            if pred.shape[-1] == 1:  # Sigmoid output (binary segmentation)
-                pred = (pred - pred.min()) / (pred.max() - pred.min() + 1e-8)  # Normalize to [0, 1]
-                pred = (pred > 0.5).astype(np.float32)  # Threshold to binary
-            else:  # Softmax output (multi-class segmentation)
-                pred = np.argmax(pred, axis=-1).astype(np.float32)
-                if pred.max() > 0:
-                    pred = pred / pred.max()
-
-            # Create a figure with 1 row and 4 columns
-            plt.figure(figsize=figsize)
-
-            # Epoch 1 - Input Image
-            plt.subplot(1, 4, 1)
-            plt.imshow(epoch_1_data['img'], cmap='gray')
-            plt.title("Input Image", fontsize=10)
-            plt.axis('off')
-
-            # Epoch 1 - Ground Truth Mask
-            plt.subplot(1, 4, 2)
-            plt.imshow(np.squeeze(epoch_1_data['mask']), cmap='gray')
-            plt.title("Ground Truth Mask", fontsize=10)
-            plt.axis('off')
-
-            # Epoch 1 - Predicted Mask
-            plt.subplot(1, 4, 3)
-            plt.imshow(np.squeeze(epoch_1_data['pred']), cmap='gray')
-            plt.title("Predicted Mask; nEpoch 1", fontsize=10)
-            plt.axis('off')
-
-            # Final - Predicted Mask
-            plt.subplot(1, 4, 4)
-            plt.imshow(np.squeeze(pred), cmap='gray')
-            plt.title(f"Predicted Mask; nEpoch {last_epoch}", fontsize=10)  # Use last_epoch
-            plt.axis('off')
-
-            plt.tight_layout()
-            plt.show()
-
-    # Return a LambdaCallback that handles epoch end and train end
-    return keras.callbacks.LambdaCallback(on_epoch_end=on_epoch_end, on_train_end=on_train_end)
-
-# class ShowImageTrainingProgress(keras.callbacks.Callback):
+class ShowImageTrainingProgress(keras.callbacks.Callback):
     """
     Custom callback to display input image, ground truth mask, and predicted mask for a specific sample
     at the end of the first epoch and the end of the last epoch.
-    
+
     Example:
-        callbacks = [ShowImageTrainingProgress(train_dataset, sample_idx=0)]
+    - callbacks = [ShowImageTrainingProgress(train_dataset, sample_idx=0)]
     """
-    
-    def __init__(self, dataset, sample_idx=0):
+
+    def __init__(self, dataset, sample_idx=0, figsize=(8, 3.5)):
         """
         Args:
             dataset: tf.data.Dataset object containing (image, mask) pairs
@@ -116,55 +22,68 @@ def show_image_training_progress(dataset, model, sample_idx=0, figsize=(8, 3.5))
         """
         super().__init__()
         self.dataset = dataset
+        self.figsize = figsize
         self.sample_idx = sample_idx
-        self.num_epochs = None
-    
-    def on_train_begin(self, logs=None):
-        """Store the total number of epochs."""
-        self.num_epochs = self.params['epochs']
-    
-    def on_epoch_end(self, epoch, logs=None):
-        """Display images at the end of the first and last epochs."""
-        if epoch == 0 or epoch == self.num_epochs - 1:
-            self._display_images(epoch, "Epoch End")
+        self.num_epochs = None  # Will be set during training
+        self.images = None
+        self.masks = None
+        self.predictions = {}  # Store predictions for first and last epochs
 
-    def _display_images(self, epoch, title_prefix):
-        """Helper function to display input image, ground truth mask, and predicted mask."""
-        # Get a batch from the dataset
-        for batch in self.dataset.take(1):
+    def on_train_begin(self, logs=None):
+        """Get the total number of epochs from the training configuration."""
+        self.num_epochs = self.params['epochs']
+
+    def on_epoch_begin(self, epoch, logs=None):
+        """Capture prediction at the beginning of the first epoch."""
+        if epoch == 0:  # First epoch
+            self._store_images_and_predictions(epoch)
+
+    def on_epoch_end(self, epoch, logs=None):
+        """Capture prediction at the end of the last epoch and display the figure."""
+        if epoch == self.num_epochs - 1:  # Last epoch
+            self._store_images_and_predictions(epoch)
+            self._display_images()
+
+    def _store_images_and_predictions(self, epoch):
+        """Store the input image, ground truth mask, and predicted mask for the specified epoch."""
+        # Get a batch from the dataset and select the specified sample
+        for batch in self.dataset.take(1):  # Take the first batch
             images, masks = batch
-            img = images[self.sample_idx].numpy()
-            mask = masks[self.sample_idx].numpy()
+            self.images = images[self.sample_idx].numpy()  # Convert to NumPy
+            self.masks = masks[self.sample_idx].numpy()  # Convert to NumPy
 
             # Predict using the model
-            pred = self.model.predict(np.expand_dims(img, axis=0), verbose=0)[0]
+            pred = self.model.predict(np.expand_dims(self.images, axis=0), verbose=0)[0]
+            self.predictions[epoch] = pred  # Store prediction for this epoch
 
-            # Ensure predicted mask is binarized if needed (e.g., for segmentation)
-            if pred.shape[-1] == 1:  # Sigmoid output
-                pred = (pred > 0.5).astype(np.float32)
-            else:  # Softmax output
-                pred = np.argmax(pred, axis=-1).astype(np.float32)
+    def _display_images(self):
+        """Display input image, ground truth mask, and predicted masks for the first and last epochs."""
+        # Create a figure with 4 subplots
+        plt.figure(figsize=self.figsize)
 
-            # Plotting
-            plt.figure(figsize=(10, 3))
+        # Input Image
+        plt.subplot(1, 4, 1)
+        plt.imshow(self.images)
+        plt.title("Input Image", fontsize=10)
+        plt.axis('off')
 
-            # Input Image
-            plt.subplot(1, 3, 1)
-            plt.imshow(img)
-            plt.title(f"Input Image\nEpoch {epoch + 1}", fontsize=10)
-            plt.axis('off')
+        # Ground Truth Mask
+        plt.subplot(1, 4, 2)
+        plt.imshow(np.squeeze(self.masks), cmap='gray')
+        plt.title("Ground Truth Mask", fontsize=10)
+        plt.axis('off')
 
-            # Ground Truth Mask
-            plt.subplot(1, 3, 2)
-            plt.imshow(np.squeeze(mask), cmap='gray')
-            plt.title(f"Ground Truth\nEpoch {epoch + 1}", fontsize=10)
-            plt.axis('off')
+        # Predicted Mask at First Epoch
+        plt.subplot(1, 4, 3)
+        plt.imshow(np.squeeze(self.predictions[0]), cmap='gray')
+        plt.title(f"Predicted Mask; n_epoch 1", fontsize=10)
+        plt.axis('off')
 
-            # Predicted Mask
-            plt.subplot(1, 3, 3)
-            plt.imshow(np.squeeze(pred), cmap='gray')
-            plt.title(f"Predicted Mask\nEpoch {epoch + 1}", fontsize=10)
-            plt.axis('off')
+        # Predicted Mask at Last Epoch
+        plt.subplot(1, 4, 4)
+        plt.imshow(np.squeeze(self.predictions[self.num_epochs - 1]), cmap='gray')
+        plt.title(f"Predicted Mask; n_epoch {self.num_epochs}", fontsize=10)
+        plt.axis('off')
 
-            plt.tight_layout()
-            plt.show()
+        plt.tight_layout()
+        plt.show()
