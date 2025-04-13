@@ -15,12 +15,12 @@ class ShowImageTrainingProgress(keras.callbacks.Callback):
     - callbacks = [ShowImageTrainingProgress(train_dataset, sample_idx=0)]
     """
 
-    def __init__(self, dataset, sample_idx=0, figsize=(10, 4)):
+    def __init__(self, dataset, sample_idx=0, figsize=(8, 3.5)):
         """
         Args:
             dataset: tf.data.Dataset object containing (image, mask) pairs
             sample_idx: Index of the sample to display from the dataset (default: 0)
-            figsize: Figure size for the display (default: (10, 4))
+            figsize: Figure size for the display (default: (8, 3.5))
         """
         super().__init__()
         self.dataset = dataset
