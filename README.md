@@ -145,3 +145,24 @@ It is used in image segmentation to measure dissimilarity between predicted clas
 ▪ Multiple skip connections at each level<br/>
 ▪ Maintains high resolution details<br/>
 ▪ Better for medical image segmentation<br/>
+
+## Usage
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/RezaSaadatyar/Machine-Learning-with-MATLAB.git
+   ```
+2. Open ...
+3. Run ...
+
+## Contributing
+
+Contributions are welcome! Please fork the repository and submit a pull request with your changes.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contact
+
+For any questions or support, please contact Reza.Saadatyar@outlook.com
