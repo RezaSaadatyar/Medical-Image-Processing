@@ -67,26 +67,26 @@ class ShowImageTrainingProgress(keras.callbacks.Callback):
         # Input Image
         plt.subplot(1, 4, 1)
         plt.imshow(self.images)
-        plt.title("Input Image", fontsize=8)
+        plt.title("Input Image", fontsize=10)
         plt.axis('off')
 
         # Ground Truth Mask
         plt.subplot(1, 4, 2)
         plt.imshow(np.squeeze(self.masks), cmap='gray')
-        plt.title("Ground Truth", fontsize=8)
+        plt.title("Ground Truth Mask", fontsize=10)
         plt.axis('off')
 
         # Predicted Mask at First Epoch
         plt.subplot(1, 4, 3)
         plt.imshow(np.squeeze(self.predictions[0]), cmap='gray')
-        plt.title("Pred. Epoch 1", fontsize=8)
+        plt.title("Predicted Mask. Epoch 1", fontsize=10)
         plt.axis('off')
 
         # Predicted Mask at Last Epoch
         last_epoch = min(self.epochs_trained - 1, max(self.predictions.keys()))
         plt.subplot(1, 4, 4)
         plt.imshow(np.squeeze(self.predictions[last_epoch]), cmap='gray')
-        plt.title(f"Pred. Epoch {last_epoch + 1}", fontsize=8)
+        plt.title(f"Predicted Mask. Epoch {last_epoch + 1}", fontsize=10)
         plt.axis('off')
 
         plt.tight_layout()
