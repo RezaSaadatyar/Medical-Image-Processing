@@ -35,6 +35,10 @@ def resunet_model(
     Returns:
         A Keras Model instance
     """
+    # Clear the TensorFlow session to free up memory and avoid conflicts
+    # from previous model definitions
+    tf.keras.backend.clear_session()
+    
      # Input layer and normalization
     inputs = Input((img_height, img_width, img_channels))
 

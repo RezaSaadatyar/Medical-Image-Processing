@@ -37,7 +37,10 @@ def unet_model(
         img_height, img_width, img_channels = list(train_dataset.element_spec[0].shape)
         model = unet_model(img_height, img_width, img_channels)
     """
-
+    # Clear the TensorFlow session to free up memory and avoid conflicts
+    # from previous model definitions
+    tf.keras.backend.clear_session()
+    
     # Input layer and normalization
     inputs = Input((img_height, img_width, img_channels))
     
