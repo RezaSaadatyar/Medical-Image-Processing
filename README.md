@@ -1,168 +1,150 @@
 **Medical Image Processing**
 
-`Image classification` assigns <font color =#f57207>*a single label to an entire image*</font>, while `segmentation` goes a step further by <font color =#f57207>*labeling each pixel or group of pixels*</font>, effectively dividing the image into meaningful components. This enables more detailed analysis and supports applications like object detection, medical imaging, and autonomous driving, where identifying specific parts of an image is essential.
+This repository contains code and resources for processing and analyzing medical images using deep learning techniques. The project focuses on implementing and experimenting with U-Net and ResNet models for tasks such as segmentation, classification, and evaluation of medical images.
 
-**Image Segmentation Types:**<br/>
-<font color =#38f109><b>Semantic Segmentation:</b></font><br/>
-▪ Assigns each pixel to a specific class<br/>
-▪ Doesn't distinguish between instances of same class<br/>
-▪ Example: All cars are labeled as "car" class<br/>
+### Overview
 
-<font color =#38f109><b>Instance Segmentation:</b></font><br/>
-▪ Detects and segments individual objects<br/>
-▪ Distinguishes between instances of same class<br/>
-▪ Example: Each car gets unique label (car1, car2)<br/>
+`Image classification` assigns *a single label to an entire image*, while `segmentation` goes a step further by *labeling each pixel or group of pixels*, effectively dividing the image into meaningful components. This enables more detailed analysis and supports applications like object detection, medical imaging, and autonomous driving, where identifying specific parts of an image is essential.
 
-<font color =#38f109><b>Panoptic Segmentation:</b></font><br/>
-▪ Combines semantic and instance segmentation<br/>
-▪ Segments both countable objects and background<br/>
-▪ Example: Cars as instances + road/sky as semantic<br/>
+#### Image Segmentation Types
 
-<font color =#38f109><b>Binary Segmentation:</b></font><br/>
-▪ Segments image into foreground and background<br/>
-▪ Only two classes (0 or 1)<br/>
-▪ Example: Object vs background<br/>
+- **Semantic Segmentation:**
+  - Assigns each pixel to a specific class.
+  - Doesn't distinguish between instances of the same class.
+  - Example: All cars are labeled as "car" class.
+- **Instance Segmentation:**
+  - Detects and segments individual objects.
+  - Distinguishes between instances of the same class.
+  - Example: Each car gets a unique label (car1, car2).
+- **Panoptic Segmentation:**
+  - Combines semantic and instance segmentation.
+  - Segments both countable objects and background.
+  - Example: Cars as instances + road/sky as semantic.
+- **Binary Segmentation:**
+  - Segments the image into foreground and background.
+  - Only two classes (0 or 1).
+  - Example: Object vs background.
+- **Real-time Segmentation:**
+  - Fast processing for video/streaming.
+  - Often trades accuracy for speed.
+  - Example: Self-driving car vision systems.
 
-<font color =#38f109><b>Real-time Segmentation:</b></font><br/>
-▪ Fast processing for video/streaming<br/>
-▪ Often trades accuracy for speed<br/>
-▪ Example: Self-driving car vision systems<br/>
+#### Segmentation Methods
 
-**Segmentation methods:**<br/>
-▪ <font color =#f17909><b>Manual annotation</b></font> involves marking image boundaries or regions of interest. Though reliable, it is time-consuming, labor-intensive, prone to errors, and unsuitable for large datasets or complex tasks due to consistency challenges.<br/>
+- **Manual Annotation:** Involves marking image boundaries or regions of interest. Though reliable, it is time-consuming, labor-intensive, prone to errors, and unsuitable for large datasets or complex tasks due to consistency challenges.
+- **Pixel-wise Classification:** Independently classifies each pixel using algorithms like decision trees, SVMs, or random forests. However, it often fails to capture global context, spatial relationships, and accurate object boundaries, leading to segmentation issues.
+- **U-Net's Architecture:** Features a contracting path and an expansive path. The contracting path, similar to feedforward layers in other CNNs, uses encoder layers to reduce spatial resolution while capturing contextual information. The expansive path uses decoder layers to upsample feature maps and decode the data, aided by skip connections from the contracting path to preserve spatial details. This combination enables accurate feature localization and segmentation map generation.
 
-▪ <font color =#f17909><b>Pixel-wise classification</b></font> independently classifies each pixel using algorithms like decision trees, SVMs, or random forests. However, it often fails to capture global context, spatial relationships, and accurate object boundaries, leading to segmentation issues.<br/>
+#### U-Net Framework
 
-▪ <font color =#f17909><b>U-Net's</b></font> architecture features a contracting path and an expansive path. The contracting path, similar to feedforward layers in other CNNs, uses encoder layers to reduce spatial resolution while capturing contextual information. The expansive path uses decoder layers to upsample feature maps and decode the data, aided by skip connections from the contracting path to preserve spatial details. This combination enables accurate feature localization and segmentation map generation.<br/>
+**UNET** was developed to address the inefficiencies and inaccuracies of traditional image segmentation methods.
+- **End-to-End Learning:** UNET employs an end-to-end learning approach, enabling it to segment images directly from input-output pairs without requiring user annotations. By training on a large, labeled dataset, UNET automatically extracts essential features and delivers precise segmentation, eliminating the need for time-consuming manual labeling.
+- **Fully Convolutional Architecture:** UNET utilizes a fully convolutional architecture, consisting solely of convolutional layers without any fully connected layers. This design allows UNET to process input images of any size, enhancing its versatility and adaptability for diverse segmentation tasks and varying input dimensions.
+- **U-shaped Architecture with Skip Connections:** The network's architecture features encoding and decoding paths for local and global context, with skip connections preserving key information for precise segmentation.
+- **Contextual Information and Localisation:** Skip connections in UNET merge multi-scale features, enhancing context absorption, detail capture, and improving segmentation accuracy with precise object boundaries.
+- **Data Augmentation and Regularization:** UNET enhances resilience and generalization by using data augmentation, like rotations, flips, scaling, and deformations, to diversify training data, and regularization techniques, such as dropout and batch normalization, to prevent overfitting.
 
-**UNET** was developed to address the inefficiencies and inaccuracies of traditional image segmentation methods.<br/>
-▪ <font color =#38f109><b>End-to-End Learning:</b></font><br/>
-UNET employs an end-to-end learning approach, enabling it to segment images directly from input-output pairs without requiring user annotations. By training on a large, labeled dataset, UNET automatically extracts essential features and delivers precise segmentation, eliminating the need for time-consuming manual labeling.<br/>
+#### Key Elements of the U-Net Framework
 
-▪ <font color =#38f109><b>Fully Convolutional Architecture:</b></font><br/>
-UNET utilizes a fully convolutional architecture, consisting solely of convolutional layers without any fully connected layers. This design allows UNET to process input images of any size, enhancing its versatility and adaptability for diverse segmentation tasks and varying input dimensions.<br/>
+- **Contracting Path (Encoding Path):** Uses convolution and max pooling techniques to capture high-resolution, low-level features while reducing spatial dimensions. Each downsampling step doubles the number of feature channels, allowing for the extraction of features at various scales from the input image.
+- **Expanding Path (Decoding Path):** Transposed convolutions, or deconvolutions, upsample feature maps to reconstruct a detailed segmentation map. This technique restores the features to match the resolution of the input image, ensuring precise alignment.
+- **Bottleneck (Bottom):** Bridge between contracting and expansive paths. Has the highest number of feature channels.
+- **Skip Connections:** Link encoding and decoding layers, preserving spatial details and enhancing segmentation by merging features from earlier layers. It concatenates the encoder feature map with the decoder, which helps the backward flow of gradients for improved training. After every concatenation, two consecutive regular convolutions are applied to assemble a more precise output.
+- **Fully Convolutional Layers:** Uses convolutional layers, avoiding fully connected ones, allowing it to process images of any size while retaining spatial information for versatile segmentation tasks.
+- **Final Layer:** 1x1 convolution to map feature vector to the desired number of classes. Output is a pixel-wise segmentation map.
+- **Dice Coefficient Loss:** Measures overlap between predicted and true segmentation masks. Dice loss (1 - Dice coefficient) minimizes as alignment improves. It's particularly effective for unbalanced datasets, encouraging accurate separation of foreground and background by penalizing false positives and negatives.
+- **Cross-Entropy Loss:** Measures dissimilarity between predicted class probabilities and ground truth labels. It treats each pixel as an independent classification problem, encouraging high probabilities for correct classes and penalizing deviations. This method works well for balanced foreground/background classes or multi-class segmentation tasks.
 
-▪ <font color =#38f109><b>U-shaped Architecture with Skip Connections:</b></font><br/> 
-The network's architecture features encoding and decoding paths for local and global context, with skip connections preserving key information for precise segmentation.<br/>
+#### Common Evaluation Metrics for Image Segmentation
 
-▪ <font color =#38f109><b>Contextual Information and Localisation:</b></font><br/>
-Skip connections in UNET merge multi-scale features, enhancing context absorption, detail capture, and improving segmentation accuracy with precise object boundaries.<br/>
+- **Intersection over Union (IoU):**
+  - Measures overlap between predicted and ground truth masks.
+  - Formula: (Area of Intersection) / (Area of Union).
+  - Range: 0 (no overlap) to 1 (perfect overlap).
+  - Widely used for object detection and segmentation.
+- **Dice Coefficient / F1 Score:**
+  - Similar to IoU but gives more weight to overlapping regions.
+  - Formula: 2 * (Area of Intersection) / (Sum of both areas).
+  - Range: 0 to 1.
+  - Popular in medical image segmentation.
+- **Pixel Accuracy:**
+  - Ratio of correctly classified pixels to total pixels.
+  - Simple but can be misleading with class imbalance.
+  - Formula: (True Positives + True Negatives) / Total Pixels.
+- **Mean Pixel Accuracy:**
+  - Average per-class pixel accuracy.
+  - Better for imbalanced classes.
+  - Calculated separately for each class tand hen averaged.
+- **Mean IoU (mIoU):**
+  - Average IoU across all classes.
+  - Standard metric for semantic segmentation.
+  - Handles class imbalance well.
+- **Boundary F1 Score:**
+  - Focuses on segmentation boundaries.
+  - Important for precise edge detection.
+  - Useful when boundary accuracy is critical.
+- **Precision and Recall:**
+  - Precision: Accuracy of positive predictions.
+  - Recall: Ability to find all positive instances.
+  - Important for specific applications.
 
-▪ <font color =#38f109><b>Data Augmentation and Regularization:</b></font><br/>
-UNET enhances resilience and generalization by using data augmentation, like rotations, flips, scaling, and deformations, to diversify training data, and regularization techniques, such as dropout and batch normalization, to prevent overfitting.<br/>
+#### Comparison of U-Net with CNN and FCN
 
-**Key Elements of the UNET Framework:**<br/>
-▪ <font color =#f17909><b>Contracting Path (Encoding Path):</b></font><br/>
-UNET's contracting path uses convolution and max pooling techniques to capture high-resolution, low-level features while reducing spatial dimensions. Each downsampling step doubles the number of feature channels, allowing for extracting features at various scales from the input image.<br/>
+#### Traditional CNN vs U-Net
 
-▪ <font color =#f17909><b>Expanding Path (Decoding Path):</b></font><br/> 
-Transposed convolutions, or deconvolutions, upsample feature maps in the UNET expansion path to reconstruct a detailed segmentation map. This technique restores the features to match the resolution of the input image, ensuring precise alignment.<br/>
+**Traditional CNN:**
+- Primarily designed for classification tasks.
+- Uses fully connected layers at the end.
+- Loses spatial information through pooling.
+- Output is a single class label.
+- Not suitable for pixel-wise segmentation.
 
-▪ <font color =#f17909><b>Bottleneck (Bottom)</b></font><br/>
-Bridge between contracting and expansive paths. Has the highest number of feature channels.<br/>
+**U-Net:**
+- Specifically designed for segmentation.
+- Fully convolutional architecture.
+- Preserves spatial information via skip connections.
+- Output has the same resolution as input.
+- Pixel-wise segmentation prediction.
 
-▪ <font color =#f17909><b>Skip Connections:</b></font><br/>
-Skip connections in UNET link encoding and decoding layers, preserving spatial details and enhancing segmentation by merging features from earlier layers. It concatenates the encoder feature map with the decoder, which helps the backward flow of gradients for improved training. After every concatenation we again apply two consecutive regular convolutions so that the model can learn to assemble a more precise output.<br/>
+#### FCN vs U-Net
 
-▪ <font color =#f17909><b>Fully Convolutional Layers:</b></font><br/> 
-UNET uses convolutional layers, avoiding fully connected ones, allowing it to process images of any size while retaining spatial information for versatile segmentation tasks.<br/>
+**Fully Convolutional Network (FCN):**
+- First architecture for end-to-end segmentation.
+- Uses VGG/ResNet as encoder.
+- Simple upsampling in the decoder.
+- Limited skip connections.
+- Lower resolution output is possible.
 
-▪ <font color =#f17909><b>Final Layer:</b></font><br>
-1x1 convolution to map feature vector to desired number of classes. Output is a pixel-wise segmentation map.<br/>
+**U-Net:**
+- Symmetric encoder-decoder structure.
+- Custom encoder design.
+- Sophisticated decoder with skip connections.
+- Multiple skip connections at each level.
+- Maintains high-resolution details.
+- Better for medical image segmentation.
 
-▪ <font color =#f17909><b>Dice Coefficient Loss:</b></font><br/>
-The Dice coefficient measures overlap between predicted and true segmentation masks, while Dice loss (1 - Dice coefficient) minimizes as alignment improves. It's particularly effective for unbalanced datasets, encouraging accurate separation of foreground and background by penalizing false positives and negatives.<br/>
-
-▪ <font color =#f17909><b>Cross-Entropy Loss:</b></font><br/>
-It is used in image segmentation to measure dissimilarity between predicted class probabilities and ground truth labels. It treats each pixel as an independent classification problem, encouraging high probabilities for correct classes and penalizing deviations. This method works well for balanced foreground/background classes or multi-class segmentation tasks.<br/>
-
-**Common Evaluation Metrics for Image Segmentation:**<br/>
-<font color =#09f1ab><b>Intersection over Union (IoU):</b></font><br/>
-▪ Measures overlap between predicted and ground truth masks<br/>
-▪ Formula: (Area of Intersection) / (Area of Union)<br/>
-▪ Range: 0 (no overlap) to 1 (perfect overlap)<br/>
-▪ Widely used for object detection and segmentation<br/>
-
-<font color =#09f1ab><b>Dice Coefficient / F1 Score:</b></font><br/>
-▪ Similar to IoU but gives more weight to overlapping regionsv<br/>
-▪ Formula: 2 * (Area of Intersection) / (Sum of both areas)<br/>
-▪ Range: 0 to 1<br/>
-▪ Popular in medical image segmentation<br/>
-
-<font color =#09f1ab><b>Pixel Accuracy:</b></font><br/>
-▪ Ratio of correctly classified pixels to total pixels<br/>
-▪ Simple but can be misleading with class imbalance<br/>
-▪ Formula: (True Positives + True Negatives) / Total Pixels<br/>
-
-<font color =#09f1ab><b>Mean Pixel Accuracy:</b></font><br/>
-▪ Average per-class pixel accuracy<br/>
-▪ Better for imbalanced classes<br/>
-▪ Calculated separately for each class then averaged<br/>
-
-<font color =#09f1ab><b>Mean IoU (mIoU):</b></font><br/>
-▪ Average IoU across all classes<br/>
-▪ Standard metric for semantic segmentation<br/>
-▪ Handles class imbalance well<br/>
-
-<font color =#09f1ab><b>Boundary F1 Score:</b></font><br/>
-▪ Focuses on segmentation boundaries<br/>
-▪ Important for precise edge detection<br/>
-▪ Useful when boundary accuracy is critical<br/>
-
-<font color =#09f1ab><b>Precision and Recall:</b></font><br/>
-▪ Precision: Accuracy of positive predictions<br/>
-▪ Recall: Ability to find all positive instances<br/>
-▪ Important for specific applications<br/>
-
-**Comparison of U-Net with CNN and FCN:**<br/>
-<font color =#f109b7><b>Traditional CNN vs U-Net:</b></font><br/>
-**`Traditional CNN:`**<br/>
-▪ Primarily designed for classification tasks<br/>
-▪ Uses fully connected layers at the end<br/>
-▪ Loses spatial information through pooling<br/>
-▪ Output is a single class label<br/>
-▪ Not suitable for pixel-wise segmentation<br/>
-
-**`U-Net:`**<br/>
-▪ Specifically designed for segmentation<br/>
-▪ Fully convolutional architecture<br/>
-▪ Preserves spatial information via skip connections<br/>
-▪ Output has same resolution as input<br/>
-▪ Pixel-wise segmentation prediction<br/>
-
-<font color =#f109b7><b>FCN vs U-Net:</b></font><br/>
-**`Fully Convolutional Network (FCN):`**<br/>
-▪ First architecture for end-to-end segmentation<br/>
-▪ Uses VGG/ResNet as encoder<br/>
-▪ Simple upsampling in decoder<br/>
-▪ Limited skip connections<br/>
-▪ Lower resolution output possible<br/>
-
-**`U-Net:`**<br/>
-▪ Symmetric encoder-decoder structure<br/>
-▪ Custom encoder design<br/>
-▪ Sophisticated decoder with skip connections<br/>
-▪ Multiple skip connections at each level<br/>
-▪ Maintains high resolution details<br/>
-▪ Better for medical image segmentation<br/>
-
-## Usage
+### Usage
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/RezaSaadatyar/Machine-Learning-with-MATLAB.git
+   git clone https://github.com/RezaSaadatYar/Medical-IMAGE-Processing.git
+   cd Medical-IMAGE-Processing
    ```
-2. Open ...
-3. Run ...
+2. Start with the notebooks in the Code/ directory to understand the workflow:
+   - Begin with `01_fundamental.ipynb` for basics.
+   - Progress through the U-Net (`02_unet.ipynb`, `03_projects_unet.ipynb`) and ResUNet (`06_resunet.ipynb`, `07_projects_resunet.ipynb`) notebooks for model training and projects.
+   - Use `04_unet++.ipynb` and `08_resunet++.ipynb` for advanced implementations.
+3. Use the Data/ directory datasets for training and evaluation.
+4. Utility scripts in Code/Functions/ can be imported into notebooks for preprocessing, evaluation, and visualization.
 
-## Contributing
+### Contributing
 
 Contributions are welcome! Please fork the repository and submit a pull request with your changes.
 
-## License
+### License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Contact
+### Contact
 
 For any questions or support, please contact Reza.Saadatyar@outlook.com
