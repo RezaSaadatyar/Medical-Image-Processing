@@ -2,11 +2,11 @@
 
 This repository contains code and resources for processing and analyzing medical images using deep learning techniques. The project focuses on implementing and experimenting with U-Net and ResNet models for tasks such as segmentation, classification, and evaluation of medical images.
 
-## Overview
+### Overview
 
 `Image classification` assigns *a single label to an entire image*, while `segmentation` goes a step further by *labeling each pixel or group of pixels*, effectively dividing the image into meaningful components. This enables more detailed analysis and supports applications like object detection, medical imaging, and autonomous driving, where identifying specific parts of an image is essential.
 
-### Image Segmentation Types
+#### Image Segmentation Types
 
 - **Semantic Segmentation:**
   - Assigns each pixel to a specific class.
@@ -24,7 +24,7 @@ This repository contains code and resources for processing and analyzing medical
   - Example: Cars as instances + road/sky as semantic.
 
 - **Binary Segmentation:**
-  - Segments image into foreground and background.
+  - Segments the image into foreground and background.
   - Only two classes (0 or 1).
   - Example: Object vs background.
 
@@ -33,7 +33,7 @@ This repository contains code and resources for processing and analyzing medical
   - Often trades accuracy for speed.
   - Example: Self-driving car vision systems.
 
-### Segmentation Methods
+#### Segmentation Methods
 
 - **Manual Annotation:** Involves marking image boundaries or regions of interest. Though reliable, it is time-consuming, labor-intensive, prone to errors, and unsuitable for large datasets or complex tasks due to consistency challenges.
   
@@ -41,7 +41,7 @@ This repository contains code and resources for processing and analyzing medical
 
 - **U-Net's Architecture:** Features a contracting path and an expansive path. The contracting path, similar to feedforward layers in other CNNs, uses encoder layers to reduce spatial resolution while capturing contextual information. The expansive path uses decoder layers to upsample feature maps and decode the data, aided by skip connections from the contracting path to preserve spatial details. This combination enables accurate feature localization and segmentation map generation.
 
-### U-Net Framework
+#### U-Net Framework
 
 **UNET** was developed to address the inefficiencies and inaccuracies of traditional image segmentation methods.
 
@@ -57,7 +57,7 @@ This repository contains code and resources for processing and analyzing medical
 
 #### Key Elements of the U-Net Framework
 
-- **Contracting Path (Encoding Path):** Uses convolution and max pooling techniques to capture high-resolution, low-level features while reducing spatial dimensions. Each downsampling step doubles the number of feature channels, allowing for extracting features at various scales from the input image.
+- **Contracting Path (Encoding Path):** Uses convolution and max pooling techniques to capture high-resolution, low-level features while reducing spatial dimensions. Each downsampling step doubles the number of feature channels, allowing for the extraction of features at various scales from the input image.
 
 - **Expanding Path (Decoding Path):** Transposed convolutions, or deconvolutions, upsample feature maps to reconstruct a detailed segmentation map. This technique restores the features to match the resolution of the input image, ensuring precise alignment.
 
@@ -73,7 +73,7 @@ This repository contains code and resources for processing and analyzing medical
 
 - **Cross-Entropy Loss:** Measures dissimilarity between predicted class probabilities and ground truth labels. It treats each pixel as an independent classification problem, encouraging high probabilities for correct classes and penalizing deviations. This method works well for balanced foreground/background classes or multi-class segmentation tasks.
 
-### Common Evaluation Metrics for Image Segmentation
+#### Common Evaluation Metrics for Image Segmentation
 
 - **Intersection over Union (IoU):**
   - Measures overlap between predicted and ground truth masks.
@@ -112,7 +112,7 @@ This repository contains code and resources for processing and analyzing medical
   - Recall: Ability to find all positive instances.
   - Important for specific applications.
 
-### Comparison of U-Net with CNN and FCN
+#### Comparison of U-Net with CNN and FCN
 
 #### Traditional CNN vs U-Net
 
@@ -147,7 +147,7 @@ This repository contains code and resources for processing and analyzing medical
 - Maintains high-resolution details.
 - Better for medical image segmentation.
 
-## Usage
+### Usage
 
 1. Clone the repository:
    ```bash
@@ -161,14 +161,14 @@ This repository contains code and resources for processing and analyzing medical
 3. Use the Data/ directory datasets for training and evaluation.
 4. Utility scripts in Code/Functions/ can be imported into notebooks for preprocessing, evaluation, and visualization.
 
-## Contributing
+### Contributing
 
 Contributions are welcome! Please fork the repository and submit a pull request with your changes.
 
-## License
+### License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Contact
+### Contact
 
 For any questions or support, please contact Reza.Saadatyar@outlook.com
