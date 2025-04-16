@@ -140,7 +140,7 @@ def unetplusplus_model(
     conv2_3 = concatenate([up2_3, c2, conv2_2], axis=3)
     conv2_3 = Conv2D(2 * base_filters, kernel_size, kernel_initializer='he_normal', padding='same')(conv2_3)
     if use_batchnorm: conv2_3 = BatchNormalization()(conv2_3)
-    conv2_3 = Activation('relu')(conv3_3)
+    conv2_3 = Activation('relu')(conv2_3)
     if act_dropout: conv2_3 = Dropout(dropout_rates['mid'])(conv2_3)  # Mid layer
     conv2_3 = Conv2D(2 * base_filters, kernel_size, kernel_initializer='he_normal', padding='same')(conv2_3)
     if use_batchnorm: conv2_3 = BatchNormalization()(conv2_3)
