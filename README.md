@@ -1,9 +1,7 @@
-**Medical Image Processing**
-
+## Medical Image Processing
 This repository contains code and resources for processing and analyzing medical images using deep learning techniques. The project focuses on implementing and experimenting with U-Net and ResNet models for tasks such as segmentation, classification, and evaluation of medical images.
 
 ### Overview
-
 `Image classification` assigns *a single label to an entire image*, while `segmentation` goes a step further by *labeling each pixel or group of pixels*, effectively dividing the image into meaningful components. This enables more detailed analysis and supports applications like object detection, medical imaging, and autonomous driving, where identifying specific parts of an image is essential.
 
 #### Image Segmentation Types
