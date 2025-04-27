@@ -2,6 +2,29 @@
 
 This repository contains code and resources for processing and analyzing medical images using deep learning techniques. The project focuses on implementing and experimenting with U-Net and ResNet models for tasks such as segmentation, classification, and evaluation of medical images.
 
+## What do you Learn
+
+- **Medical Image Processing:** Learn techniques for handling and analyzing medical imaging data
+- **Deep Learning Architectures:** Implement and experiment with U-Net and ResNet models
+- **Image Segmentation:** Understand different segmentation approaches and their applications
+- **Model Training:** Develop skills in training and optimizing deep learning models
+- **Evaluation Metrics:** Learn how to assess model performance for medical imaging tasks
+- **Practical Implementation:** Gain hands-on experience with real-world medical image analysis challenges
+
+## Usage
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/RezaSaadatYar/Medical-IMAGE-Processing.git
+   cd Medical-IMAGE-Processing
+   ```
+2. Start with the notebooks in the Code/ directory to understand the workflow:
+   - Begin with `01_fundamental.ipynb` for basics.
+   - Progress through the U-Net (`02_unet.ipynb`, `03_projects_unet.ipynb`) and ResUNet (`06_resunet.ipynb`, `07_projects_resunet.ipynb`) notebooks for model training and projects.
+   - Use `04_unet++.ipynb` and `08_resunet++.ipynb` for advanced implementations.
+3. Use the Data/ directory datasets for training and evaluation.
+4. Utility scripts in Code/Functions/ can be imported into notebooks for preprocessing, evaluation, and visualization.
+
 ### Overview
 
 `Image classification` assigns *a single label to an entire image*, while `segmentation` goes a step further by *labeling each pixel or group of pixels*, effectively dividing the image into meaningful components. This enables more detailed analysis and supports applications like object detection, medical imaging, and autonomous driving, where identifying specific parts of an image is essential.
