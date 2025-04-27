@@ -146,7 +146,7 @@ This repository contains code and resources for processing and analyzing medical
 - Maintains high-resolution details.
 - Better for medical image segmentation.
 
-### Difference Between U-Net and ResUNet
+#### Difference Between U-Net and ResUNet
 
 **U-Net:**
 - Pioneering architecture specifically designed for biomedical image segmentation
