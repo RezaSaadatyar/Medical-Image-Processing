@@ -25,11 +25,11 @@ This repository contains code and resources for processing and analyzing medical
 3. Use the Data/ directory datasets for training and evaluation.
 4. Utility scripts in Code/Functions/ can be imported into notebooks for preprocessing, evaluation, and visualization.
 
-### Overview
+## Overview
 
 `Image classification` assigns *a single label to an entire image*, while `segmentation` goes a step further by *labeling each pixel or group of pixels*, effectively dividing the image into meaningful components. This enables more detailed analysis and supports applications like object detection, medical imaging, and autonomous driving, where identifying specific parts of an image is essential.
 
-#### Image Segmentation Types
+### Image Segmentation Types
 
 - **Semantic Segmentation:**
   - Assigns each pixel to a specific class.
@@ -52,13 +52,13 @@ This repository contains code and resources for processing and analyzing medical
   - Often trades accuracy for speed.
   - Example: Self-driving car vision systems.
 
-#### Segmentation Methods
+### Segmentation Methods
 
 - **Manual Annotation:** Involves marking image boundaries or regions of interest. Though reliable, it is time-consuming, labor-intensive, prone to errors, and unsuitable for large datasets or complex tasks due to consistency challenges.
 - **Pixel-wise Classification:** Independently classifies each pixel using algorithms like decision trees, SVMs, or random forests. However, it often fails to capture global context, spatial relationships, and accurate object boundaries, leading to segmentation issues.
 - **U-Net's Architecture:** Features a contracting path and an expansive path. The contracting path, similar to feedforward layers in other CNNs, uses encoder layers to reduce spatial resolution while capturing contextual information. The expansive path uses decoder layers to upsample feature maps and decode the data, aided by skip connections from the contracting path to preserve spatial details. This combination enables accurate feature localization and segmentation map generation.
 
-#### U-Net Framework
+### U-Net Framework
 
 **UNET** was developed to address the inefficiencies and inaccuracies of traditional image segmentation methods.
 - **End-to-End Learning:** UNET employs an end-to-end learning approach, enabling it to segment images directly from input-output pairs without requiring user annotations. By training on a large, labeled dataset, UNET automatically extracts essential features and delivers precise segmentation, eliminating the need for time-consuming manual labeling.
@@ -67,7 +67,7 @@ This repository contains code and resources for processing and analyzing medical
 - **Contextual Information and Localisation:** Skip connections in UNET merge multi-scale features, enhancing context absorption, detail capture, and improving segmentation accuracy with precise object boundaries.
 - **Data Augmentation and Regularization:** UNET enhances resilience and generalization by using data augmentation, like rotations, flips, scaling, and deformations, to diversify training data, and regularization techniques, such as dropout and batch normalization, to prevent overfitting.
 
-#### Key Elements of the U-Net Framework
+### Key Elements of the U-Net Framework
 
 - **Contracting Path (Encoding Path):** Uses convolution and max pooling techniques to capture high-resolution, low-level features while reducing spatial dimensions. Each downsampling step doubles the number of feature channels, allowing for the extraction of features at various scales from the input image.
 - **Expanding Path (Decoding Path):** Transposed convolutions, or deconvolutions, upsample feature maps to reconstruct a detailed segmentation map. This technique restores the features to match the resolution of the input image, ensuring precise alignment.
@@ -78,7 +78,7 @@ This repository contains code and resources for processing and analyzing medical
 - **Dice Coefficient Loss:** Measures overlap between predicted and true segmentation masks. Dice loss (1 - Dice coefficient) minimizes as alignment improves. It's particularly effective for unbalanced datasets, encouraging accurate separation of foreground and background by penalizing false positives and negatives.
 - **Cross-Entropy Loss:** Measures dissimilarity between predicted class probabilities and ground truth labels. It treats each pixel as an independent classification problem, encouraging high probabilities for correct classes and penalizing deviations. This method works well for balanced foreground/background classes or multi-class segmentation tasks.
 
-#### Common Evaluation Metrics for Image Segmentation
+### Common Evaluation Metrics for Image Segmentation
 
 - **Intersection over Union (IoU):**
   - Measures overlap between predicted and ground truth masks.
@@ -111,9 +111,9 @@ This repository contains code and resources for processing and analyzing medical
   - Recall: Ability to find all positive instances.
   - Important for specific applications.
 
-#### Comparison of U-Net with CNN and FCN
+### Comparison of U-Net with CNN and FCN
 
-#### Traditional CNN vs U-Net
+### Traditional CNN vs U-Net
 
 **Traditional CNN:**
 - Primarily designed for classification tasks.
@@ -129,7 +129,7 @@ This repository contains code and resources for processing and analyzing medical
 - Output has the same resolution as input.
 - Pixel-wise segmentation prediction.
 
-#### FCN vs U-Net
+### FCN vs U-Net
 
 **Fully Convolutional Network (FCN):**
 - First architecture for end-to-end segmentation.
@@ -148,14 +148,14 @@ This repository contains code and resources for processing and analyzing medical
 
 
 
-### Contributing
+## Contributing
 
 Contributions are welcome! Please fork the repository and submit a pull request with your changes.
 
-### License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### Contact
+## Contact
 
 For any questions or support, please contact Reza.Saadatyar@outlook.com
