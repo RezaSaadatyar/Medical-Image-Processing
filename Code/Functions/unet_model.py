@@ -151,43 +151,87 @@ def unet_model(
     return model
 
 
-# def conv_block(input, num_filters, kernel_size=(3, 3), activation='relu'):
-#     conv = Conv2D(num_filters, kernel_size=kernel_size, kernel_initializer='he_normal', padding='same')(input)
-#     conv = Activation(activation)(conv)
+# def unet_model(
+#     img_height: int,
+#     img_width: int,
+#     img_channels: int,
+#     base_filters: int = 16,
+#     kernel_size: tuple = (3, 3),
+#     transpose_kernel_size: tuple = (2, 2),
+#     act_dropout: bool = False,
+#     use_batchnorm: bool = False,
+#     dropout_rates: dict = {'shallow':0.1, 'mid':0.2, 'deep':0.3},
+#     n_class: int = 1):
+#     """
+#     Args:
+#         img_height: Height of input images
+#         img_width: Width of input images
+#         img_channels: Number of input channels
+#         base_filters: Base number of filters for the first layer (default: 16)
+#         kernel_size: Size of the convolution kernels (default: (3, 3))
+#         transpose_kernel_size: Size of the transpose convolution kernels (default: (2, 2))
+#         act_dropout: Global toggle for dropout (default: False)
+#         use_batchnorm: Whether to use BatchNormalization (default: False)
+#         dropout_rates: Dictionary defining dropout rates for different depths
+#         n_class: Number of output classes (default: 1 for binary segmentation)
+
+#     Returns:
+#         A compiled Keras Model instance
+#     """
+#     # Clear the TensorFlow session to free up memory and avoid conflicts
+#     # from previous model definitions
+#     tf.keras.backend.clear_session()
     
-#     conv = Dropout(0.1)(conv)
-    
-#     conv = Conv2D(num_filters, kernel_size=kernel_size, kernel_initializer='he_normal', padding='same')(conv)
-#     conv = Activation(activation)(conv)
-    
-#     return conv
+#     # Input processing
+#     inputs = Input((img_height, img_width, img_channels))
+#     inputs = Lambda(lambda x: x / 255.0 if tf.reduce_max(x) > 1.0 else x, 
+#                    output_shape=(img_height, img_width, img_channels))(inputs)
 
-# def encoder_block(input, num_filters, pool_size=(2, 2)):
-#     conv = conv_block(input, num_filters)
-#     pool = MaxPooling2D(pool_size)(conv)
-    
-#     return conv, pool
+#     # Encoder blocks
+#     def encoder_block(x, filters, dropout_rate=None):
+#         x = Conv2D(filters, kernel_size, padding='same', kernel_initializer='he_normal')(x)
+#         if use_batchnorm: x = BatchNormalization()(x)
+#         x = Activation('relu')(x)
+#         x = Conv2D(filters, kernel_size, padding='same', kernel_initializer='he_normal')(x)
+#         if use_batchnorm: x = BatchNormalization()(x)
+#         x = Activation('relu')(x)
+#         if act_dropout and dropout_rate: x = Dropout(dropout_rate)(x)
+#         return x, MaxPooling2D((2, 2))(x)
 
-# def decoder_block(input, skip_features, num_filters, kernel_size=(2, 2), strides=(2, 2)):
-#     up = Conv2DTranspose(num_filters, kernel_size=kernel_size, strides=strides, padding='same')(input)
-#     concat = concatenate([skip_features, up], axis=3)
-#     d = conv_block(concat, num_filters)
-#     return d
+#     c1, p1 = encoder_block(inputs, base_filters)
+#     c2, p2 = encoder_block(p1, base_filters * 2, dropout_rates['shallow'])
+#     c3, p3 = encoder_block(p2, base_filters * 4, dropout_rates['mid'])
+#     c4, p4 = encoder_block(p3, base_filters * 8, dropout_rates['mid'])
 
-# inputs = Input((img_height, img_width, img_channels))
-# inputs = Lambda(lambda x: x / 255.0)(inputs)
+#     # Bottleneck
+#     c5 = Conv2D(base_filters * 16, kernel_size, padding='same', kernel_initializer='he_normal')(p4)
+#     if use_batchnorm: c5 = BatchNormalization()(c5)
+#     c5 = Activation('relu')(c5)
+#     c5 = Conv2D(base_filters * 16, kernel_size, padding='same', kernel_initializer='he_normal')(c5)
+#     if use_batchnorm: c5 = BatchNormalization()(c5)
+#     c5 = Activation('relu')(c5)
+#     if act_dropout: c5 = Dropout(dropout_rates['deep'])(c5)
 
-# s1, p1 = encoder_block(inputs, 16)
-# s2, p2 = encoder_block(p1, 32)
-# s3, p3 = encoder_block(p2, 64)
-# s4, p4 = encoder_block(p3, 128)
+#     # Decoder blocks
+#     def decoder_block(x, skip, filters, dropout_rate=None):
+#         x = Conv2DTranspose(filters, transpose_kernel_size, strides=(2, 2), padding='same')(x)
+#         x = concatenate([skip, x], axis=3)
+#         x = Conv2D(filters, kernel_size, padding='same', kernel_initializer='he_normal')(x)
+#         if use_batchnorm: x = BatchNormalization()(x)
+#         x = Activation('relu')(x)
+#         x = Conv2D(filters, kernel_size, padding='same', kernel_initializer='he_normal')(x)
+#         if use_batchnorm: x = BatchNormalization()(x)
+#         x = Activation('relu')(x)
+#         if act_dropout and dropout_rate: x = Dropout(dropout_rate)(x)
+#         return x
 
-# b1 = conv_block(p4, 256)
+#     c6 = decoder_block(c5, c4, base_filters * 8, dropout_rates['mid'])
+#     c7 = decoder_block(c6, c3, base_filters * 4, dropout_rates['mid'])
+#     c8 = decoder_block(c7, c2, base_filters * 2, dropout_rates['shallow'])
+#     c9 = decoder_block(c8, c1, base_filters)
 
-# d1 = decoder_block(b1, s4, 128)
-# d2 = decoder_block(d1, s3, 64)
-# d3 = decoder_block(d2, s1, 32)
-# d4 = decoder_block(d3, s1, 16)
+#     # Output
+#     if n_class < 1: raise ValueError("Number of classes must be at least 1")
+#     outputs = Conv2D(n_class, (1, 1), activation='sigmoid' if n_class == 1 else 'softmax')(c9)
 
-
-# outputs = Conv2D(1, kernel_size=(1, 1), activation='sigmoid')(d4)
+#     return Model(inputs=inputs, outputs=outputs)
