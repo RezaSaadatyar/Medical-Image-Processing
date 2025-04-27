@@ -131,38 +131,38 @@ This repository contains code and resources for processing and analyzing medical
 
 #### FCN vs U-Net
 
-**Fully Convolutional Network (FCN):**
-- First architecture for end-to-end segmentation.
-- Uses VGG/ResNet as encoder.
-- Simple upsampling in the decoder.
-- Limited skip connections.
-- Lower resolution output is possible.
+**Fully Convolutional Network (FCN):**<br/>
+▪ First architecture for end-to-end segmentation.<br/>
+▪ Uses VGG/ResNet as encoder.<br/>
+▪ Simple upsampling in the decoder.<br/>
+▪ Limited skip connections.<br/>
+▪ Lower resolution output is possible.<br/>
 
-**U-Net:**
-- Symmetric encoder-decoder structure.
-- Custom encoder design.
-- Sophisticated decoder with skip connections.
-- Multiple skip connections at each level.
-- Maintains high-resolution details.
-- Better for medical image segmentation.
+**U-Net:**<br/>
+▪ Symmetric encoder-decoder structure.<br/>
+▪ Custom encoder design.<br/>
+▪ Sophisticated decoder with skip connections.<br/>
+▪ Multiple skip connections at each level.<br/>
+▪ Maintains high-resolution details.<br/>
+▪ Better for medical image segmentation.<br/>
 
 #### Difference Between U-Net and ResUNet
 
-**U-Net:**
-- Pioneering architecture specifically designed for biomedical image segmentation
-- Features a U-shaped encoder-decoder structure with skip connections that preserve spatial information
-- Utilizes basic convolutional blocks without residual connections
-- Simpler architecture with fewer parameters, making it more computationally efficient
-- Well-suited for tasks with limited training data and less complex segmentation requirements
+**U-Net:**<br/>
+▪ Pioneering architecture specifically designed for biomedical image segmentation.<br/>
+▪ Features a U-shaped encoder-decoder structure with skip connections that preserve spatial information.<br/>
+▪ Utilizes basic convolutional blocks without residual connections.<br/>
+▪ Simpler architecture with fewer parameters, making it more computationally efficient.<br/>
+▪ Well-suited for tasks with limited training data and less complex segmentation requirements.<br/>
 
-**ResUNet:**
-- Advanced variant of U-Net that integrates residual learning principles
-- Replaces standard convolutional blocks with residual blocks that include skip connections within each block
-- Enables better gradient flow through the network, mitigating vanishing gradient problems
-- Facilitates training of deeper networks by maintaining stable gradients
-- Demonstrates enhanced feature learning capabilities through residual connections
-- Typically achieves superior performance on complex segmentation tasks with challenging datasets
-- Contains more parameters and requires greater computational resources than standard U-Net
+**ResUNet:**<br/>
+▪ Advanced variant of U-Net that integrates residual learning principles.<br/>
+▪ Replaces standard convolutional blocks with residual blocks that include skip connections within each block.<br/>
+▪ Enables better gradient flow through the network, mitigating vanishing gradient problems.<br/>
+▪ Facilitates training of deeper networks by maintaining stable gradients.<br/>
+▪ Demonstrates enhanced feature learning capabilities through residual connections.<br/>
+▪ Typically achieves superior performance on complex segmentation tasks with challenging datasets.<br/>
+▪ Contains more parameters and requires greater computational resources than standard U-Net.<br/>
 
 ## Contributing
 
