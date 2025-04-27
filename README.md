@@ -4,12 +4,12 @@ This repository contains code and resources for processing and analyzing medical
 
 ## What do you Learn
 
-- **Medical Image Processing:** Learn techniques for handling and analyzing medical imaging data
-- **Deep Learning Architectures:** Implement and experiment with U-Net and ResNet models
-- **Image Segmentation:** Understand different segmentation approaches and their applications
-- **Model Training:** Develop skills in training and optimizing deep learning models
-- **Evaluation Metrics:** Learn how to assess model performance for medical imaging tasks
-- **Practical Implementation:** Gain hands-on experience with real-world medical image analysis challenges
+▪ **Medical Image Processing:** Learn techniques for handling and analyzing medical imaging data.<br/>
+▪ **Deep Learning Architectures:** Implement and experiment with U-Net and ResNet models.<br/>
+▪ **Image Segmentation:** Understand different segmentation approaches and their applications.<br/>
+▪ **Model Training:** Develop skills in training and optimizing deep learning models.<br/>
+▪ **Evaluation Metrics:** Learn how to assess model performance for medical imaging tasks.<br/>
+▪ **Practical Implementation:** Gain hands-on experience with real-world medical image analysis challenges.<br/>
 
 ## Usage
 
@@ -60,7 +60,7 @@ This repository contains code and resources for processing and analyzing medical
 
 #### U-Net Framework
 
-**UNET** was developed to address the inefficiencies and inaccuracies of traditional image segmentation methods.
+**UNET** was developed to address the inefficiencies and inaccuracies of traditional image segmentation methods.<br/>
 ▪ **End-to-End Learning:** UNET employs an end-to-end learning approach, enabling it to segment images directly from input-output pairs without requiring user annotations. By training on a large, labeled dataset, UNET automatically extracts essential features and delivers precise segmentation, eliminating the need for time-consuming manual labeling.<br/>
 ▪ **Fully Convolutional Architecture:** UNET utilizes a fully convolutional architecture, consisting solely of convolutional layers without any fully connected layers. This design allows UNET to process input images of any size, enhancing its versatility and adaptability for diverse segmentation tasks and varying input dimensions.<br/>
 ▪ **U-shaped Architecture with Skip Connections:** The network's architecture features encoding and decoding paths for local and global context, with skip connections preserving key information for precise segmentation.<br/>
