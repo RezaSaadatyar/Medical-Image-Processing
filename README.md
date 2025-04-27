@@ -146,7 +146,23 @@ This repository contains code and resources for processing and analyzing medical
 - Maintains high-resolution details.
 - Better for medical image segmentation.
 
+## Difference Between U-Net and ResUNet
 
+**U-Net:**
+- Pioneering architecture specifically designed for biomedical image segmentation
+- Features a U-shaped encoder-decoder structure with skip connections that preserve spatial information
+- Utilizes basic convolutional blocks without residual connections
+- Simpler architecture with fewer parameters, making it more computationally efficient
+- Well-suited for tasks with limited training data and less complex segmentation requirements
+
+**ResUNet:**
+- Advanced variant of U-Net that integrates residual learning principles
+- Replaces standard convolutional blocks with residual blocks that include skip connections within each block
+- Enables better gradient flow through the network, mitigating vanishing gradient problems
+- Facilitates training of deeper networks by maintaining stable gradients
+- Demonstrates enhanced feature learning capabilities through residual connections
+- Typically achieves superior performance on complex segmentation tasks with challenging datasets
+- Contains more parameters and requires greater computational resources than standard U-Net
 
 ## Contributing
 
